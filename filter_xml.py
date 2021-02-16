@@ -34,7 +34,7 @@ for row in xml_root.findall('row'):
         end_date = ElementTree.SubElement(row, 'end_date')
         end_date.text = pnrs[str(pnr)]['enddate']
 
-    res.append(xmltodict.parse(ElementTree.tostring(row, method='xml')))
+        res.append(xmltodict.parse(ElementTree.tostring(row, method='xml')))
 
 with open('out.json', 'w') as f:
     f.write(json.dumps(res, indent=4))
