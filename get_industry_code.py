@@ -11,8 +11,7 @@ FILES = ['als', 'arden', 'ejstrupholm', 'loegstoer', 'naesbjerg', 'oester-hurup'
 base_url = 'https://datacvr.virk.dk/data/'
 crawl_url = f'{base_url}visenhed'
 
-skipped_industry = []
-skipped_date = []
+skipped = {'industry': {}, 'date': {}}
 
 for file in FILES:
     path = f'data/data_{file}.json'
@@ -43,7 +42,9 @@ for file in FILES:
             data['industry_text'] = industry.replace(data['industry_code'], '').strip()
             print(f'code: {data["industry_code"]}: {data["industry_text"]}')
         else:
-            skipped_industry.append((path, ent_id))
+            if path not in skipped['industry'].keys():
+                skipped['industry'][path] = []
+            skipped['industry'][path].append(ent_id)
 
         start_date_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-startdato'})
 
@@ -52,12 +53,14 @@ for file in FILES:
             data['start_date'] = list(start_date_elem.children)[3].text.strip()
             print(f'date: {data["start_date"]}')
         else:
-            skipped_date.append((path, ent_id))
+            if path not in skipped['date'].keys():
+                skipped['date'][path] = []
+            skipped['date'][path].append(ent_id)
 
         time.sleep(CRAWL_DELAY)
 
     with open(path, 'w') as f:
         f.write(json.dumps(d, indent=4))
 
-print(f'Skipped industries: {skipped_industry}')
-print(f'Skipped start dates: {skipped_date}')
+with open('data/skip.json') as f:
+    f.write(json.dumps(skipped, indent=4))
