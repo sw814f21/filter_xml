@@ -11,15 +11,19 @@ FILES = ['als', 'arden', 'ejstrupholm', 'loegstoer', 'naesbjerg', 'oester-hurup'
 base_url = 'https://datacvr.virk.dk/data/'
 crawl_url = f'{base_url}visenhed'
 
+# a skip usually means that the company does not have a pnr
 skipped = {'industry': {}, 'date': {}}
 
 for file in FILES:
     path = f'data/data_{file}.json'
+    print('#' * 40)
     print(f'FILE: {path}')
     with open(path, 'r') as f:
         d = json.loads(f.read())
 
+    row_index = 0
     for ent_id, data in d.items():
+        print('-' * 40)
         print(f'{data["navn1"]} | {data["pnr"]}')
         params = {
             'enhedstype': 'produktionsenhed',
@@ -57,10 +61,19 @@ for file in FILES:
                 skipped['date'][path] = []
             skipped['date'][path].append(ent_id)
 
+        row_index += 1
+        row_rem = len(d.keys()) - row_index
+        print(f'{row_rem} rows to go')
+
         time.sleep(CRAWL_DELAY)
 
     with open(path, 'w') as f:
         f.write(json.dumps(d, indent=4))
+
+    print('#' * 40)
+    file_index = FILES.index(file)
+    file_rem = len(FILES[file_index + 1:])
+    print(f'{file_rem} files to go')
 
 with open('data/skip.json') as f:
     f.write(json.dumps(skipped, indent=4))
