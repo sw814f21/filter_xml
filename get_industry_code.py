@@ -18,7 +18,7 @@ for file in FILES:
     with open(path, 'r') as f:
         d = json.loads(f.read())
 
-    d = {k: v for k, v in d if d['pnr']}
+    d = {k: v for k, v in d.items() if d['pnr']}
 
     row_index = 0
     for ent_id, data in d.items():
