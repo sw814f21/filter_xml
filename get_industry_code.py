@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 CRAWL_DELAY = 10
 # file dir: data/
 # file name: data_CITY.json where CITY \in FILES
-FILES = ['als', 'arden', 'ejstrupholm', 'loegstoer', 'naesbjerg', 'oester-hurup', 'ranum']
+FILES = ['null-control']
 
 base_url = 'https://datacvr.virk.dk/data/'
 crawl_url = f'{base_url}visenhed'
@@ -18,7 +18,9 @@ for file in FILES:
     with open(path, 'r') as f:
         d = json.loads(f.read())
 
-    d = {k: v for k, v in d.items() if d['pnr']}
+    d = {k: v for k, v in d.items() if v['pnr']}
+
+    out = {}
 
     row_index = 0
     for ent_id, data in d.items():
@@ -38,26 +40,30 @@ for file in FILES:
 
         industry_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-branchekode'})
 
-        industry_elem = industry_elem.parent.parent.parent
-        industry = list(industry_elem.children)[3].text.strip()
-        data['industry_code'] = industry.split()[0]
-        data['industry_text'] = industry.replace(data['industry_code'], '').strip()
-        print(f'code: {data["industry_code"]}: {data["industry_text"]}')
+        if industry_elem:
+            industry_elem = industry_elem.parent.parent.parent
+            industry = list(industry_elem.children)[3].text.strip()
+            data['industry_code'] = industry.split()[0]
+            data['industry_text'] = industry.replace(data['industry_code'], '').strip()
+            print(f'code: {data["industry_code"]}: {data["industry_text"]}')
 
         start_date_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-startdato'})
 
-        start_date_elem = start_date_elem.parent.parent.parent
-        data['start_date'] = list(start_date_elem.children)[3].text.strip()
-        print(f'date: {data["start_date"]}')
+        if start_date_elem:
+            start_date_elem = start_date_elem.parent.parent.parent
+            data['start_date'] = list(start_date_elem.children)[3].text.strip()
+            print(f'date: {data["start_date"]}')
 
         row_index += 1
         row_rem = len(d.keys()) - row_index
         print(f'{row_rem} rows to go')
 
+        out[ent_id] = data
+
         time.sleep(CRAWL_DELAY)
 
     with open(path, 'w') as f:
-        f.write(json.dumps(d, indent=4))
+        f.write(json.dumps(out, indent=4))
 
     print('#' * 40)
     file_index = FILES.index(file)
