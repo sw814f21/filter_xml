@@ -17,6 +17,9 @@ Will do the following
     - By running each method prefixed by `filter_` in class `DataHandler`
 - Dump the result to `smiley_json_processed.json`
 
+## TODO
+Method for extracting a sample 
+
 ## Notes
 
 Only companies with a p-number is included.
