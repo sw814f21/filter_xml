@@ -11,15 +11,14 @@ FILES = ['als', 'arden', 'ejstrupholm', 'loegstoer', 'naesbjerg', 'oester-hurup'
 base_url = 'https://datacvr.virk.dk/data/'
 crawl_url = f'{base_url}visenhed'
 
-# a skip usually means that the company does not have a pnr
-skipped = {'industry': {}, 'date': {}}
-
 for file in FILES:
     path = f'data/data_{file}.json'
     print('#' * 40)
     print(f'FILE: {path}')
     with open(path, 'r') as f:
         d = json.loads(f.read())
+
+    d = {k: v for k, v in d if d['pnr']}
 
     row_index = 0
     for ent_id, data in d.items():
@@ -39,27 +38,17 @@ for file in FILES:
 
         industry_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-branchekode'})
 
-        if industry_elem:
-            industry_elem = industry_elem.parent.parent.parent
-            industry = list(industry_elem.children)[3].text.strip()
-            data['industry_code'] = industry.split()[0]
-            data['industry_text'] = industry.replace(data['industry_code'], '').strip()
-            print(f'code: {data["industry_code"]}: {data["industry_text"]}')
-        else:
-            if path not in skipped['industry'].keys():
-                skipped['industry'][path] = []
-            skipped['industry'][path].append(ent_id)
+        industry_elem = industry_elem.parent.parent.parent
+        industry = list(industry_elem.children)[3].text.strip()
+        data['industry_code'] = industry.split()[0]
+        data['industry_text'] = industry.replace(data['industry_code'], '').strip()
+        print(f'code: {data["industry_code"]}: {data["industry_text"]}')
 
         start_date_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-startdato'})
 
-        if start_date_elem:
-            start_date_elem = start_date_elem.parent.parent.parent
-            data['start_date'] = list(start_date_elem.children)[3].text.strip()
-            print(f'date: {data["start_date"]}')
-        else:
-            if path not in skipped['date'].keys():
-                skipped['date'][path] = []
-            skipped['date'][path].append(ent_id)
+        start_date_elem = start_date_elem.parent.parent.parent
+        data['start_date'] = list(start_date_elem.children)[3].text.strip()
+        print(f'date: {data["start_date"]}')
 
         row_index += 1
         row_rem = len(d.keys()) - row_index
@@ -74,6 +63,3 @@ for file in FILES:
     file_index = FILES.index(file)
     file_rem = len(FILES[file_index + 1:])
     print(f'{file_rem} files to go')
-
-with open('data/skip.json') as f:
-    f.write(json.dumps(skipped, indent=4))
