@@ -5,14 +5,14 @@ from bs4 import BeautifulSoup
 
 CRAWL_DELAY = 10
 # file dir: data/
-# file name: data_CITY.json where CITY \in FILES
+# file name: data_NAME.json where NAME \in FILES
 FILES = ['null-control']
 
 base_url = 'https://datacvr.virk.dk/data/'
 crawl_url = f'{base_url}visenhed'
 
 for file in FILES:
-    path = f'data/data_{file}.json'
+    path = f'depr/data/data_{file}.json'
     print('#' * 40)
     print(f'FILE: {path}')
     with open(path, 'r') as f:

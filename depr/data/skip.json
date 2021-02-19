@@ -1,0 +1,28 @@
+{
+    "industry": {
+        "data/data_als.json": [
+            "950050"
+        ],
+        "data/data_naesbjerg.json": [
+            "947571",
+            "956772",
+            "960661"
+        ],
+        "data/data_oester-hurup.json": [
+            "950050"
+        ]
+    },
+    "date": {
+        "data/data_als.json": [
+            "950050"
+        ],
+        "data/data_naesbjerg.json": [
+            "947571",
+            "956772",
+            "960661"
+        ],
+        "data/data_oester-hurup.json": [
+            "950050"
+        ]
+    }
+}
