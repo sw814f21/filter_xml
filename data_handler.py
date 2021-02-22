@@ -121,7 +121,7 @@ class BaseDataHandler:
 
             out[ent_id] = data
 
-            if row_rem == 0:
+            if row_rem != 0:
                 time.sleep(self.CRAWL_DELAY)
 
         return out
