@@ -51,6 +51,8 @@ class BaseDataHandler:
 
         for row in list(root):
             new_obj = {col.tag: col.text for col in row}
+            new_obj['Geo_Lat'] = float(new_obj['Geo_Lat']) if new_obj['Geo_Lat'] != None else "null"
+            new_obj['Geo_Lng'] = float(new_obj['Geo_Lng']) if new_obj['Geo_Lng'] != None else "null"
             new_obj['navnelbnr'] = row[0].text
             res.append(new_obj)
 
@@ -190,7 +192,7 @@ class DataHandler(BaseDataHandler):
         return row
 
     @staticmethod
-    def filter_industry_codes(data):
+    def _filter_industry_codes(data):
         """
         Filters all companies that do not have a valid industry code.
         """
@@ -209,6 +211,15 @@ class DataHandler(BaseDataHandler):
                 for item in data
                 if 'seneste_kontrol' in item.keys()
                 and item['seneste_kontrol'] is not None]
+
+    @staticmethod
+    def filter_null_coordinates(data):
+        """
+        Filters all companies without a longitude or latitude.
+        """
+        return [item
+                    for item in data
+                    if item['Geo_Lat'] != 'null' and item['Geo_Lng'] != 'null']
 
     @staticmethod
     def _filter_dead_companies(data):
