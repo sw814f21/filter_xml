@@ -61,10 +61,10 @@ class BaseDataHandler:
             f.write(json.dumps(res, indent=4, sort_keys=True))
 
     def convertControlToInt(self, data: dict):
-            data['seneste_kontrol'] = int(data['seneste_kontrol']) if data['seneste_kontrol'] != None else "null"
-            data['naestseneste_kontrol'] = int(data['naestseneste_kontrol']) if data['naestseneste_kontrol'] != None else "null"
-            data['tredjeseneste_kontrol'] = int(data['tredjeseneste_kontrol']) if data['tredjeseneste_kontrol'] != None else "null"
-            data['fjerdeseneste_kontrol'] = int(data['fjerdeseneste_kontrol']) if data['fjerdeseneste_kontrol'] != None else "null"
+            data['seneste_kontrol'] = int(data['seneste_kontrol']) if data['seneste_kontrol'] != None else None
+            data['naestseneste_kontrol'] = int(data['naestseneste_kontrol']) if data['naestseneste_kontrol'] != None else None
+            data['tredjeseneste_kontrol'] = int(data['tredjeseneste_kontrol']) if data['tredjeseneste_kontrol'] != None else None
+            data['fjerdeseneste_kontrol'] = int(data['fjerdeseneste_kontrol']) if data['fjerdeseneste_kontrol'] != None else None
 
     def _retrieve_smiley_data(self):
         """
