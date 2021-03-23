@@ -53,7 +53,6 @@ class BaseDataHandler:
             new_obj = {col.tag: col.text for col in row}
             self.convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
             self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
-            new_obj['navnelbnr'] = row[0].text
             res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
