@@ -53,14 +53,14 @@ class BaseDataHandler:
             new_obj = {col.tag: col.text for col in row}
             new_obj['Geo_Lat'] = float(new_obj['Geo_Lat']) if new_obj['Geo_Lat'] != None else "null"
             new_obj['Geo_Lng'] = float(new_obj['Geo_Lng']) if new_obj['Geo_Lng'] != None else "null"
-            self.convertControlToInt(new_obj)
+            self.convert_control_to_int(new_obj)
             new_obj['navnelbnr'] = row[0].text
             res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
             f.write(json.dumps(res, indent=4, sort_keys=True))
 
-    def convertControlToInt(self, data: dict):
+    def convert_control_to_int(self, data: dict):
             data['seneste_kontrol'] = int(data['seneste_kontrol']) if data['seneste_kontrol'] != None else None
             data['naestseneste_kontrol'] = int(data['naestseneste_kontrol']) if data['naestseneste_kontrol'] != None else None
             data['tredjeseneste_kontrol'] = int(data['tredjeseneste_kontrol']) if data['tredjeseneste_kontrol'] != None else None
