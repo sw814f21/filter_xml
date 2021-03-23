@@ -47,15 +47,24 @@ class BaseDataHandler:
         tree = ET.parse(self.SMILEY_XML)
         root = tree.getroot()
 
-        res = {}
+        res = []
 
         for row in list(root):
             new_obj = {col.tag: col.text for col in row}
-            key = row[0].text
-            res[key] = new_obj
+            self.convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
+            self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
+            res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
             f.write(json.dumps(res, indent=4, sort_keys=True))
+
+    def convert_to_int(self, data: dict, *keys):
+        for k in keys:
+            data[k] = int(data[k]) if data[k] != None else None
+
+    def convert_to_float(self, data: dict, *keys):
+        for k in keys:
+            data[k] = float(data[k]) if data[k] != None else None
 
     def _retrieve_smiley_data(self):
         """
@@ -77,13 +86,13 @@ class BaseDataHandler:
             d = json.loads(f.read())
 
         valid = self._valid_production_units(d)
-        processed = self._append_additional_data(valid)
-        filtered = self._filter_data(processed)
+        #processed = self._append_additional_data(valid)
+        filtered = self._filter_data(valid)
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
 
-    def _filter_data(self, data: dict) -> dict:
+    def _filter_data(self, data: list) -> list:
         """
         Apply filters
         """
@@ -92,13 +101,13 @@ class BaseDataHandler:
 
         return data
 
-    def _append_additional_data(self, smiley_data: dict) -> dict:
+    def _append_additional_data(self, smiley_data: list) -> list:
         """
         Iterate over every row of the smiley data and run append methods on the data
         """
-        out = {}
+        out = []
         row_index = 0
-        for ent_id, data in smiley_data.items():
+        for data in smiley_data:
             print('-' * 40)
             print(f'{data["navn1"]} | {data["pnr"]}')
             params = {
@@ -116,21 +125,21 @@ class BaseDataHandler:
                 data = appender(soup, data)
 
             row_index += 1
-            row_rem = len(smiley_data.keys()) - row_index
+            row_rem = len(smiley_data) - row_index
             print(f'{row_rem} rows to go')
 
-            out[ent_id] = data
+            out.append(data)
 
             if row_rem != 0:
                 time.sleep(self.CRAWL_DELAY)
 
         return out
 
-    def _valid_production_units(self, initial: dict):
+    def _valid_production_units(self, initial: list):
         """
         Reconstruct dict only containing rows that have p-numbers
         """
-        return {k: v for k, v in initial.items() if self._has_pnr(v) and self._has_cvr(v)}
+        return [item for item in initial if self._has_pnr(item) and self._has_cvr(item)]
 
     @staticmethod
     def _has_cvr(row: dict):
@@ -190,25 +199,34 @@ class DataHandler(BaseDataHandler):
         return row
 
     @staticmethod
-    def filter_industry_codes(data):
+    def _filter_industry_codes(data):
         """
         Filters all companies that do not have a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        return {k: v
-                for k, v in data.items()
-                if 'industry_code' in v.keys()
-                and v['industry_code'] in include_codes}
+        return [item
+                for item in data
+                if 'industry_code' in item.keys()
+                and item['industry_code'] in include_codes]
 
     @staticmethod
     def filter_null_control(data):
         """
         Filters all companies that have not yet received a smiley control visit.
         """
-        return {k: v
-                for k, v in data.items()
-                if 'seneste_kontrol' in v.keys()
-                and v['seneste_kontrol'] is not None}
+        return [item
+                for item in data
+                if 'seneste_kontrol' in item.keys()
+                and item['seneste_kontrol'] is not None]
+
+    @staticmethod
+    def filter_null_coordinates(data):
+        """
+        Filters all companies without a longitude or latitude.
+        """
+        return [item
+                    for item in data
+                    if item['Geo_Lat'] != 'null' and item['Geo_Lng'] != 'null']
 
     @staticmethod
     def _filter_dead_companies(data):
@@ -218,12 +236,12 @@ class DataHandler(BaseDataHandler):
         Filters all companies that are presumed dead - i.e., has not received a smiley control visit
         within the last year.
         """
-        res = {}
-        for k, v in data.items():
-            last_control = datetime.strptime(v['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
+        res = []
+        for item in data:
+            last_control = datetime.strptime(item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
             now = datetime.now()
             diff = now - last_control
 
             if diff.days < 365:
-                res[k] = v
+                res.append(item)
         return res
