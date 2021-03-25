@@ -226,7 +226,7 @@ class DataHandler(BaseDataHandler):
         """
         return [item
                     for item in data
-                    if item['Geo_Lat'] != 'null' and item['Geo_Lng'] != 'null']
+                    if item['Geo_Lat'] != None and item['Geo_Lng'] != None]
 
     @staticmethod
     def _filter_dead_companies(data):
