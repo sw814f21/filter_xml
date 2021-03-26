@@ -1,5 +1,7 @@
 import json
 import time
+import csv
+import os
 
 from requests import get
 from bs4 import BeautifulSoup
@@ -112,7 +114,8 @@ class BaseDataHandler:
 
         row_index = 0
         for data in smiley_data:
-            if data['pnr'] in prev_processed_pnrs:
+            if any(restaurant['pnr'] == data['pnr'] for restaurant in prev_processed_pnrs):
+                row_index += 1
                 continue
 
             print('-' * 40)
@@ -131,7 +134,7 @@ class BaseDataHandler:
             for appender in self.data_appenders:
                 data = appender(soup, data)
 
-            newly_processed_pnrs.append(data['pnr'])
+            newly_processed_pnrs.append(data)
 
             row_index += 1
             row_rem = len(smiley_data) - row_index
@@ -145,15 +148,25 @@ class BaseDataHandler:
         self.output_processed_companies(newly_processed_pnrs)
         return out
 
-    def output_processed_companies(self, processed_pnrs: list):
-        with open('processed_pnrs.csv', 'a') as f:
-            for pnr in processed_pnrs:
-                f.write(pnr+',')
+    def output_processed_companies(self, restaurants: list):
+        file_exists = os.path.exists('processed_pnrs.csv')
+
+        with open('processed_pnrs.csv', 'a+') as f:
+            fieldnames = ['pnr', 'seneste_kontrol_dato']
+            writer = csv.DictWriter(
+                f, fieldnames=fieldnames, extrasaction='ignore')
+
+            if not file_exists:
+                writer.writeheader()
+
+            for restaurant in restaurants:
+                writer.writerow(restaurant)
 
     def input_processed_companies(self) -> list:
         try:
             with open('processed_pnrs.csv', 'r') as f:
-                return f.read().split(',')
+                reader = csv.DictReader(f)
+                return list(reader)
         except FileNotFoundError:
             return []
 
