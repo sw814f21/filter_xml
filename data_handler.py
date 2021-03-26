@@ -52,7 +52,8 @@ class BaseDataHandler:
         for row in list(root):
             new_obj = {col.tag: col.text for col in row}
             self.convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
-            self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
+            self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
+                                'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
             res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
@@ -86,7 +87,7 @@ class BaseDataHandler:
             d = json.loads(f.read())
 
         valid = self._valid_production_units(d)
-        #processed = self._append_additional_data(valid)
+        processed = self._append_additional_data(valid)
         filtered = self._filter_data(valid)
 
         with open(out_path, 'w') as f:
@@ -106,8 +107,14 @@ class BaseDataHandler:
         Iterate over every row of the smiley data and run append methods on the data
         """
         out = []
+        newly_processed_pnrs = []
+        prev_processed_pnrs = self.input_processed_companies()
+
         row_index = 0
         for data in smiley_data:
+            if data['pnr'] in prev_processed_pnrs:
+                continue
+
             print('-' * 40)
             print(f'{data["navn1"]} | {data["pnr"]}')
             params = {
@@ -124,6 +131,8 @@ class BaseDataHandler:
             for appender in self.data_appenders:
                 data = appender(soup, data)
 
+            newly_processed_pnrs.append(data['pnr'])
+
             row_index += 1
             row_rem = len(smiley_data) - row_index
             print(f'{row_rem} rows to go')
@@ -133,7 +142,20 @@ class BaseDataHandler:
             if row_rem != 0:
                 time.sleep(self.CRAWL_DELAY)
 
+        self.output_processed_companies(newly_processed_pnrs)
         return out
+
+    def output_processed_companies(self, processed_pnrs: list):
+        with open('processed_pnrs.csv', 'a') as f:
+            for pnr in processed_pnrs:
+                f.write(pnr+',')
+
+    def input_processed_companies(self) -> list:
+        try:
+            with open('processed_pnrs.csv', 'r') as f:
+                return f.read().split(',')
+        except FileNotFoundError:
+            return []
 
     def _valid_production_units(self, initial: list):
         """
@@ -173,12 +195,14 @@ class DataHandler(BaseDataHandler):
         """
         Appends industry code and text from datacvr.virk.dk to a row
         """
-        industry_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-branchekode'})
+        industry_elem = soup.find(
+            'div', attrs={'class': 'Help-stamdata-data-branchekode'})
         if industry_elem:
             industry_elem = industry_elem.parent.parent.parent
             industry = list(industry_elem.children)[3].text.strip()
             row['industry_code'] = industry.split()[0]
-            row['industry_text'] = industry.replace(row['industry_code'], '').strip()
+            row['industry_text'] = industry.replace(
+                row['industry_code'], '').strip()
             print(f'code: {row["industry_code"]}: {row["industry_text"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
@@ -189,7 +213,8 @@ class DataHandler(BaseDataHandler):
         """
         Appends start date from datacvr.virk.dk to a row
         """
-        start_date_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-startdato'})
+        start_date_elem = soup.find(
+            'div', attrs={'class': 'Help-stamdata-data-startdato'})
         if start_date_elem:
             start_date_elem = start_date_elem.parent.parent.parent
             row['start_date'] = list(start_date_elem.children)[3].text.strip()
@@ -225,8 +250,8 @@ class DataHandler(BaseDataHandler):
         Filters all companies without a longitude or latitude.
         """
         return [item
-                    for item in data
-                    if item['Geo_Lat'] != None and item['Geo_Lng'] != None]
+                for item in data
+                if item['Geo_Lat'] != None and item['Geo_Lng'] != None]
 
     @staticmethod
     def _filter_dead_companies(data):
@@ -238,7 +263,8 @@ class DataHandler(BaseDataHandler):
         """
         res = []
         for item in data:
-            last_control = datetime.strptime(item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
+            last_control = datetime.strptime(
+                item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
             now = datetime.now()
             diff = now - last_control
 
