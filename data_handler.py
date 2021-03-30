@@ -92,12 +92,12 @@ class BaseDataHandler:
         temp_data = []
 
         temp_file_exists = os.path.exists('temp.csv')
-        temp_file = open('temp.csv', 'a+')
+        read_append = 'r+' if temp_file_exists else 'a+'
+        temp_file = open('temp.csv', read_append)
         temp_file_writer = self.get_temp_file_writer(temp_file, d[0])
 
         if(temp_file_exists):
-            # # fill temp data
-            pass
+            temp_data = self.read_temp_data(temp_file)
         else:
             temp_file_writer.writeheader()
 
@@ -130,6 +130,10 @@ class BaseDataHandler:
         fieldnames = list(data.keys())
         return csv.DictWriter(
             file, fieldnames=fieldnames, extrasaction='ignore')
+
+    def read_temp_data(self, file: TextIOWrapper) -> list:
+        reader = csv.DictReader(file)
+        return list(reader)
 
     def _filter_data(self, data: list) -> list:
         """
