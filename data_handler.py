@@ -89,7 +89,7 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        temp_data = []
+        temp_data = dict()
 
         temp_file_exists = os.path.exists('temp.csv')
         read_append = 'r+' if temp_file_exists else 'a+'
@@ -104,10 +104,10 @@ class BaseDataHandler:
         row_index = 0
 
         for restaurant in d:
-            if self._has_pnr(restaurant) and self._has_cvr(restaurant):
+            if not temp_data.get(restaurant['pnr']) and self._has_pnr(restaurant) and self._has_cvr(restaurant):
                 processed = self._append_additional_data(restaurant)
 
-                temp_data.append(processed)
+                temp_data[processed['pnr']] = processed
                 temp_file_writer.writerow(processed)
 
                 row_index += 1
@@ -116,7 +116,7 @@ class BaseDataHandler:
                 if row_rem != 0:
                     time.sleep(self.CRAWL_DELAY)
 
-        filtered = self._filter_data(temp_data)
+        filtered = self._filter_data(temp_data.values())
 
         # Write temp to json file
         # Create file with processed pnr and control date
@@ -131,9 +131,12 @@ class BaseDataHandler:
         return csv.DictWriter(
             file, fieldnames=fieldnames, extrasaction='ignore')
 
-    def read_temp_data(self, file: TextIOWrapper) -> list:
+    def read_temp_data(self, file: TextIOWrapper) -> dict:
         reader = csv.DictReader(file)
-        return list(reader)
+        out = dict()
+        for entry in reader:
+            out[entry['pnr']] = entry
+        return out
 
     def _filter_data(self, data: list) -> list:
         """
