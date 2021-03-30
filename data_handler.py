@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 import json
 import time
 import csv
@@ -88,33 +89,47 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        self.temp_data = []
-        # Check if temp file exists
-        # # fill temp data
-        self.temp_file = open('temp.csv', 'a+')
+        temp_data = []
+        temp_file = open('temp.csv', 'a+')
+
+        temp_file_exists = os.path.exists('temp.csv')
+        temp_file_writer = self.get_temp_file_writer(temp_file)
+
+        if(temp_file_exists):
+            # # fill temp data
+            pass
+        else:
+            temp_file_writer.writeheader()
 
         row_index = 0
 
         for restaurant in d:
             if self._has_pnr(restaurant) and self._has_cvr(restaurant):
                 processed = self._append_additional_data(restaurant)
-                self.temp_data.append(processed)
-                # Write to temp file
+
+                temp_data.append(processed)
+                temp_file_writer.writerow(processed)
+
                 row_index += 1
                 row_rem = len(d) - row_index
                 print(f'{row_rem} rows to go')
                 if row_rem != 0:
                     time.sleep(self.CRAWL_DELAY)
 
-        filtered = self._filter_data(self.temp_data)
+        filtered = self._filter_data(temp_data)
 
         # Write temp to json file
         # Create file with processed pnr and control date
         # Delete temp file
-        self.temp_file.close()
+        temp_file.close()
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
+
+    def get_temp_file_writer(self, file: TextIOWrapper):
+        fieldnames = ['pnr', 'seneste_kontrol_dato']
+        return csv.DictWriter(
+            file, fieldnames=fieldnames, extrasaction='ignore')
 
     def _filter_data(self, data: list) -> list:
         """
