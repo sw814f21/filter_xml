@@ -90,10 +90,10 @@ class BaseDataHandler:
             d = json.loads(f.read())
 
         temp_data = []
-        temp_file = open('temp.csv', 'a+')
 
         temp_file_exists = os.path.exists('temp.csv')
-        temp_file_writer = self.get_temp_file_writer(temp_file)
+        temp_file = open('temp.csv', 'a+')
+        temp_file_writer = self.get_temp_file_writer(temp_file, d[0])
 
         if(temp_file_exists):
             # # fill temp data
@@ -126,8 +126,8 @@ class BaseDataHandler:
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
 
-    def get_temp_file_writer(self, file: TextIOWrapper):
-        fieldnames = ['pnr', 'seneste_kontrol_dato']
+    def get_temp_file_writer(self, file: TextIOWrapper, data: dict):
+        fieldnames = list(data.keys())
         return csv.DictWriter(
             file, fieldnames=fieldnames, extrasaction='ignore')
 
