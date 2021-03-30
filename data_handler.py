@@ -37,7 +37,7 @@ class BaseDataHandler:
         """
         Main runner for collection
         """
-        self._create_smiley_json()
+        # self._create_smiley_json()
         self._process_smiley_json()
 
     def _create_smiley_json(self):
@@ -88,9 +88,30 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        valid = self._valid_production_units(d)
-        processed = self._append_additional_data(valid)
-        filtered = self._filter_data(valid)
+        self.temp_data = []
+        # Check if temp file exists
+        # # fill temp data
+        self.temp_file = open('temp.csv', 'a+')
+
+        row_index = 0
+
+        for restaurant in d:
+            if self._has_pnr(restaurant) and self._has_cvr(restaurant):
+                processed = self._append_additional_data(restaurant)
+                self.temp_data.append(processed)
+                # Write to temp file
+                row_index += 1
+                row_rem = len(d) - row_index
+                print(f'{row_rem} rows to go')
+                if row_rem != 0:
+                    time.sleep(self.CRAWL_DELAY)
+
+        filtered = self._filter_data(self.temp_data)
+
+        # Write temp to json file
+        # Create file with processed pnr and control date
+        # Delete temp file
+        self.temp_file.close()
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
@@ -104,49 +125,28 @@ class BaseDataHandler:
 
         return data
 
-    def _append_additional_data(self, smiley_data: list) -> list:
+    def _append_additional_data(self, data: dict) -> dict:
         """
-        Iterate over every row of the smiley data and run append methods on the data
+        run append methods on the data
         """
-        out = []
-        newly_processed_pnrs = []
-        prev_processed_pnrs = self.input_processed_companies()
 
-        row_index = 0
-        for data in smiley_data:
-            if any(restaurant['pnr'] == data['pnr'] for restaurant in prev_processed_pnrs):
-                row_index += 1
-                continue
+        print('-' * 40)
+        print(f'{data["navn1"]} | {data["pnr"]}')
+        params = {
+            'enhedstype': 'produktionsenhed',
+            'id': data['pnr'],
+            'language': 'da',
+            'soeg': data['pnr'],
+        }
 
-            print('-' * 40)
-            print(f'{data["navn1"]} | {data["pnr"]}')
-            params = {
-                'enhedstype': 'produktionsenhed',
-                'id': data['pnr'],
-                'language': 'da',
-                'soeg': data['pnr'],
-            }
+        print(f'{self.CRAWL_CVR_URL} | {params}')
+        res = get(self.CRAWL_CVR_URL, params=params)
+        soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
 
-            print(f'{self.CRAWL_CVR_URL} | {params}')
-            res = get(self.CRAWL_CVR_URL, params=params)
-            soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
+        for appender in self.data_appenders:
+            data = appender(soup, data)
 
-            for appender in self.data_appenders:
-                data = appender(soup, data)
-
-            newly_processed_pnrs.append(data)
-
-            row_index += 1
-            row_rem = len(smiley_data) - row_index
-            print(f'{row_rem} rows to go')
-
-            out.append(data)
-
-            if row_rem != 0:
-                time.sleep(self.CRAWL_DELAY)
-
-        self.output_processed_companies(newly_processed_pnrs)
-        return out
+        return data
 
     def output_processed_companies(self, restaurants: list):
         file_exists = os.path.exists('processed_pnrs.csv')
@@ -169,12 +169,6 @@ class BaseDataHandler:
                 return list(reader)
         except FileNotFoundError:
             return []
-
-    def _valid_production_units(self, initial: list):
-        """
-        Reconstruct dict only containing rows that have p-numbers
-        """
-        return [item for item in initial if self._has_pnr(item) and self._has_cvr(item)]
 
     @staticmethod
     def _has_cvr(row: dict):
