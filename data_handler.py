@@ -64,11 +64,11 @@ class BaseDataHandler:
 
     def convert_to_int(self, data: dict, *keys):
         for k in keys:
-            data[k] = int(data[k]) if data[k] != None else None
+            data[k] = int(data[k]) if data[k] is not None else None
 
     def convert_to_float(self, data: dict, *keys):
         for k in keys:
-            data[k] = float(data[k]) if data[k] != None else None
+            data[k] = float(data[k]) if data[k] is not None else None
 
     def _retrieve_smiley_data(self):
         """
@@ -118,7 +118,6 @@ class BaseDataHandler:
 
         filtered = self._filter_data(temp_data.values())
 
-        # Write temp to json file
         # Create file with processed pnr and control date
         # Delete temp file
         temp_file.close()
@@ -280,7 +279,7 @@ class DataHandler(BaseDataHandler):
         """
         return [item
                 for item in data
-                if item['Geo_Lat'] != None and item['Geo_Lng'] != None]
+                if item['Geo_Lat'] is not None and item['Geo_Lng'] is not None]
 
     @staticmethod
     def _filter_dead_companies(data):
