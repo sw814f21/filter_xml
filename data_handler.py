@@ -4,6 +4,7 @@ import time
 import csv
 import os
 
+from temp_file import TempFile
 from requests import get
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
@@ -89,24 +90,14 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        temp_data = dict()
-
-        temp_file_exists = os.path.exists('temp.csv')
-        read_append = 'r+' if temp_file_exists else 'a+'
-        temp_file = open('temp.csv', read_append)
-        temp_file_writer = self.get_temp_file_writer(temp_file, d[0])
-
-        if(temp_file_exists):
-            temp_data = self.read_temp_data(temp_file)
-        else:
-            temp_file_writer.writeheader()
+        temp_file = TempFile(d[0])
 
         processed_restaurants = self.input_processed_companies()
 
         row_index = 0
 
         for restaurant in d:
-            if not temp_data.get(restaurant['pnr']) and self.valid_production_unit(restaurant):
+            if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
                 if processed_restaurants.get(restaurant['pnr']):
                     if self.is_control_newer(restaurant['seneste_kontrol_dato'], processed_restaurants.get(restaurant['pnr'])):
                         # Delete old entry in already processed file
@@ -117,8 +108,7 @@ class BaseDataHandler:
 
                 processed = self._append_additional_data(restaurant)
 
-                temp_data[processed['pnr']] = processed
-                temp_file_writer.writerow(processed)
+                temp_file.add_data(processed)
 
                 row_index += 1
                 row_rem = len(d) - row_index
@@ -126,7 +116,7 @@ class BaseDataHandler:
                 if row_rem != 0:
                     time.sleep(self.CRAWL_DELAY)
 
-        filtered = self._filter_data(temp_data.values())
+        filtered = self._filter_data(temp_file.get_all())
 
         self.output_processed_companies(filtered)
         os.remove('temp.csv')
@@ -143,18 +133,6 @@ class BaseDataHandler:
         new_date = datetime.strptime(new_date_str, date_format)
         previous_date = datetime.strptime(previous_date_str, date_format)
         return new_date > previous_date
-
-    def get_temp_file_writer(self, file: TextIOWrapper, data: dict):
-        fieldnames = list(data.keys())
-        return csv.DictWriter(
-            file, fieldnames=fieldnames, extrasaction='ignore')
-
-    def read_temp_data(self, file: TextIOWrapper) -> dict:
-        reader = csv.DictReader(file)
-        out = dict()
-        for entry in reader:
-            out[entry['pnr']] = entry
-        return out
 
     def _filter_data(self, data: list) -> list:
         """
