@@ -101,10 +101,20 @@ class BaseDataHandler:
         else:
             temp_file_writer.writeheader()
 
+        processed_restaurants = self.input_processed_companies()
+
         row_index = 0
 
         for restaurant in d:
-            if not temp_data.get(restaurant['pnr']) and self._has_pnr(restaurant) and self._has_cvr(restaurant):
+            if not temp_data.get(restaurant['pnr']) and self.valid_production_unit(restaurant):
+                if processed_restaurants.get(restaurant['pnr']):
+                    if self.is_control_newer(restaurant['seneste_kontrol_dato'], processed_restaurants.get(restaurant['pnr'])):
+                        # Delete old entry in already processed file
+                        pass
+                    else:
+                        row_index += 1
+                        continue
+
                 processed = self._append_additional_data(restaurant)
 
                 temp_data[processed['pnr']] = processed
@@ -118,12 +128,21 @@ class BaseDataHandler:
 
         filtered = self._filter_data(temp_data.values())
 
-        # Create file with processed pnr and control date
+        self.output_processed_companies(filtered)
         # Delete temp file
         temp_file.close()
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
+
+    def valid_production_unit(self, restaurant: dict) -> bool:
+        return self._has_pnr(restaurant) and self._has_cvr(restaurant)
+
+    def is_control_newer(self, new_date_str: str, previous_date_str: str) -> bool:
+        date_format = '%d-%m-%Y %H:%M:%S'
+        new_date = datetime.strptime(new_date_str, date_format)
+        previous_date = datetime.strptime(previous_date_str, date_format)
+        return new_date > previous_date
 
     def get_temp_file_writer(self, file: TextIOWrapper, data: dict):
         fieldnames = list(data.keys())
@@ -183,22 +202,25 @@ class BaseDataHandler:
             for restaurant in restaurants:
                 writer.writerow(restaurant)
 
-    def input_processed_companies(self) -> list:
+    def input_processed_companies(self) -> dict:
         try:
             with open('processed_pnrs.csv', 'r') as f:
                 reader = csv.DictReader(f)
-                return list(reader)
+                out = dict()
+                for entry in reader:
+                    out[entry['pnr']] = entry['seneste_kontrol_dato']
+                return out
         except FileNotFoundError:
-            return []
+            return {}
 
-    @staticmethod
+    @ staticmethod
     def _has_cvr(row: dict):
         """
         Check if a smiley data row has a CVR number
         """
         return 'cvrnr' in row.keys() and row['cvrnr'] is not None
 
-    @staticmethod
+    @ staticmethod
     def _has_pnr(row: dict):
         """
         Check if a smiley data row has a p-number
@@ -218,7 +240,7 @@ class DataHandler(BaseDataHandler):
     def __init__(self):
         super().__init__()
 
-    @staticmethod
+    @ staticmethod
     def append_industry_code(soup, row):
         """
         Appends industry code and text from datacvr.virk.dk to a row
@@ -236,7 +258,7 @@ class DataHandler(BaseDataHandler):
             row['industry_code'] = row['industry_text'] = None
         return row
 
-    @staticmethod
+    @ staticmethod
     def append_start_date(soup, row):
         """
         Appends start date from datacvr.virk.dk to a row
@@ -251,7 +273,7 @@ class DataHandler(BaseDataHandler):
             row['industry_code'] = row['industry_text'] = None
         return row
 
-    @staticmethod
+    @ staticmethod
     def _filter_industry_codes(data):
         """
         Filters all companies that do not have a valid industry code.
@@ -262,7 +284,7 @@ class DataHandler(BaseDataHandler):
                 if 'industry_code' in item.keys()
                 and item['industry_code'] in include_codes]
 
-    @staticmethod
+    @ staticmethod
     def filter_null_control(data):
         """
         Filters all companies that have not yet received a smiley control visit.
@@ -272,7 +294,7 @@ class DataHandler(BaseDataHandler):
                 if 'seneste_kontrol' in item.keys()
                 and item['seneste_kontrol'] is not None]
 
-    @staticmethod
+    @ staticmethod
     def filter_null_coordinates(data):
         """
         Filters all companies without a longitude or latitude.
@@ -281,7 +303,7 @@ class DataHandler(BaseDataHandler):
                 for item in data
                 if item['Geo_Lat'] is not None and item['Geo_Lng'] is not None]
 
-    @staticmethod
+    @ staticmethod
     def _filter_dead_companies(data):
         """
         Excluded for now. Remove leading underscore to include.
