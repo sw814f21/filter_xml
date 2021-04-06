@@ -129,7 +129,7 @@ class BaseDataHandler:
         filtered = self._filter_data(temp_data.values())
 
         self.output_processed_companies(filtered)
-        # Delete temp file
+        os.remove('temp.csv')
         temp_file.close()
 
         with open(out_path, 'w') as f:
