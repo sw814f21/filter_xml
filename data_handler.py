@@ -34,6 +34,10 @@ class BaseDataHandler:
                               for fun in dir(self.__class__)
                               if callable(getattr(self.__class__, fun))
                               and fun.startswith('append_cvr')]
+        self.smiley_appenders = [getattr(self.__class__, fun)
+                                 for fun in dir(self.__class__)
+                                 if callable(getattr(self.__class__, fun))
+                                 and fun.startswith('append_smiley')]
 
     def collect(self):
         """
@@ -164,6 +168,12 @@ class BaseDataHandler:
         for appender in self.cvr_appenders:
             data = appender(soup, data)
 
+        smiley = get(data['URL'])
+        smiley_soup = BeautifulSoup(smiley.content.decode('utf-8'), 'html.parser')
+
+        for appender in self.smiley_appenders:
+            data = appender(smiley_soup, data)
+
         return data
 
     def output_processed_companies(self, restaurants: list):
@@ -249,6 +259,30 @@ class DataHandler(BaseDataHandler):
             print(f'date: {row["start_date"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
+        return row
+
+    @staticmethod
+    def append_smiley_reports(soup, row):
+        tags = soup.findAll('a', attrs={'target': '_blank'})
+        keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
+                'fjerdeseneste_kontrol']
+
+        # we assume that pdfs will continue to appear in descending order
+        # if we want safe guarding against changes in order we can use
+        # date = t.find('p', attrs={'class': 'DateText'}).text
+        # and check the date against the fields of param: row
+        for tag, key in zip(tags, keys):
+            url = tag.attrs['href']
+
+            d = {
+                'report_id': url.split('?')[1],
+                'smiley': row[key],
+                'date': row[f'{key}_dato']
+            }
+
+            row[key] = d
+            del row[f'{key}_dato']
+
         return row
 
     @ staticmethod
