@@ -96,24 +96,20 @@ class BaseDataHandler:
 
         for restaurant in d:
             if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
-                prev_processed_restaurant = prev_processed.get_by_pnr(
-                    restaurant['pnr'])
-                if prev_processed_restaurant:
-                    if self.is_control_newer(restaurant['seneste_kontrol_dato'], prev_processed_restaurant):
-                        prev_processed.delete(restaurant['pnr'])
-                    else:
-                        row_index += 1
-                        continue
+                if prev_processed.check_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
 
-                processed = self._append_additional_data(restaurant)
+                    processed = self._append_additional_data(restaurant)
+                    temp_file.add_data(processed)
 
-                temp_file.add_data(processed)
-
-                row_index += 1
-                row_rem = len(d) - row_index
-                print(f'{row_rem} rows to go')
-                if row_rem != 0:
-                    time.sleep(self.CRAWL_DELAY)
+                    row_index += 1
+                    row_rem = len(d) - row_index
+                    print(f'{row_rem} rows to go')
+                    if row_rem != 0:
+                        time.sleep(self.CRAWL_DELAY)
+                else:
+                    row_index += 1
+                    row_rem = len(d) - row_index
+                    print(f'{row_rem} rows to go')
 
         filtered = self._filter_data(temp_file.get_all())
 
@@ -125,12 +121,6 @@ class BaseDataHandler:
 
     def valid_production_unit(self, restaurant: dict) -> bool:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
-
-    def is_control_newer(self, new_date_str: str, previous_date_str: str) -> bool:
-        date_format = '%d-%m-%Y %H:%M:%S'
-        new_date = datetime.strptime(new_date_str, date_format)
-        previous_date = datetime.strptime(previous_date_str, date_format)
-        return new_date > previous_date
 
     def _filter_data(self, data: list) -> list:
         """
