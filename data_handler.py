@@ -30,10 +30,10 @@ class BaseDataHandler:
                         for fun in dir(self.__class__)
                         if callable(getattr(self.__class__, fun))
                         and fun.startswith('filter_')]
-        self.data_appenders = [getattr(self.__class__, fun)
-                               for fun in dir(self.__class__)
-                               if callable(getattr(self.__class__, fun))
-                               and fun.startswith('append_')]
+        self.cvr_appenders = [getattr(self.__class__, fun)
+                              for fun in dir(self.__class__)
+                              if callable(getattr(self.__class__, fun))
+                              and fun.startswith('append_cvr')]
 
     def collect(self):
         """
@@ -161,7 +161,7 @@ class BaseDataHandler:
         res = get(self.CRAWL_CVR_URL, params=params)
         soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
 
-        for appender in self.data_appenders:
+        for appender in self.cvr_appenders:
             data = appender(soup, data)
 
         return data
@@ -219,7 +219,7 @@ class DataHandler(BaseDataHandler):
         super().__init__()
 
     @ staticmethod
-    def append_industry_code(soup, row):
+    def append_cvr_industry_code(soup, row):
         """
         Appends industry code and text from datacvr.virk.dk to a row
         """
@@ -237,7 +237,7 @@ class DataHandler(BaseDataHandler):
         return row
 
     @ staticmethod
-    def append_start_date(soup, row):
+    def append_cvr_start_date(soup, row):
         """
         Appends start date from datacvr.virk.dk to a row
         """
