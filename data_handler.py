@@ -1,6 +1,8 @@
 import json
 import time
 
+from temp_file import TempFile
+from prev_processed_file import PrevProcessedFile
 from requests import get
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
@@ -52,7 +54,8 @@ class BaseDataHandler:
         for row in list(root):
             new_obj = {col.tag: col.text for col in row}
             self.convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
-            self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
+            self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
+                                'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
             res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
@@ -60,11 +63,11 @@ class BaseDataHandler:
 
     def convert_to_int(self, data: dict, *keys):
         for k in keys:
-            data[k] = int(data[k]) if data[k] != None else None
+            data[k] = int(data[k]) if data[k] is not None else None
 
     def convert_to_float(self, data: dict, *keys):
         for k in keys:
-            data[k] = float(data[k]) if data[k] != None else None
+            data[k] = float(data[k]) if data[k] is not None else None
 
     def _retrieve_smiley_data(self):
         """
@@ -85,12 +88,36 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        valid = self._valid_production_units(d)
-        #processed = self._append_additional_data(valid)
-        filtered = self._filter_data(valid)
+        temp_file = TempFile(d[0])
+
+        prev_processed = PrevProcessedFile()
+
+        row_index = 0
+
+        for restaurant in d:
+            if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
+                row_index += 1
+                row_rem = len(d) - row_index
+                if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
+
+                    processed = self._append_additional_data(restaurant)
+                    temp_file.add_data(processed)
+
+                    if row_rem != 0:
+                        time.sleep(self.CRAWL_DELAY)
+
+                print(f'{row_rem} rows to go')
+
+        filtered = self._filter_data(temp_file.get_all())
+
+        prev_processed.output_processed_companies(filtered)
+        temp_file.close()
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
+
+    def valid_production_unit(self, restaurant: dict) -> bool:
+        return self._has_pnr(restaurant) and self._has_cvr(restaurant)
 
     def _filter_data(self, data: list) -> list:
         """
@@ -101,54 +128,37 @@ class BaseDataHandler:
 
         return data
 
-    def _append_additional_data(self, smiley_data: list) -> list:
+    def _append_additional_data(self, data: dict) -> dict:
         """
-        Iterate over every row of the smiley data and run append methods on the data
+        run append methods on the data
         """
-        out = []
-        row_index = 0
-        for data in smiley_data:
-            print('-' * 40)
-            print(f'{data["navn1"]} | {data["pnr"]}')
-            params = {
-                'enhedstype': 'produktionsenhed',
-                'id': data['pnr'],
-                'language': 'da',
-                'soeg': data['pnr'],
-            }
 
-            print(f'{self.CRAWL_CVR_URL} | {params}')
-            res = get(self.CRAWL_CVR_URL, params=params)
-            soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
+        print('-' * 40)
+        print(f'{data["navn1"]} | {data["pnr"]}')
+        params = {
+            'enhedstype': 'produktionsenhed',
+            'id': data['pnr'],
+            'language': 'da',
+            'soeg': data['pnr'],
+        }
 
-            for appender in self.data_appenders:
-                data = appender(soup, data)
+        print(f'{self.CRAWL_CVR_URL} | {params}')
+        res = get(self.CRAWL_CVR_URL, params=params)
+        soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
 
-            row_index += 1
-            row_rem = len(smiley_data) - row_index
-            print(f'{row_rem} rows to go')
+        for appender in self.data_appenders:
+            data = appender(soup, data)
 
-            out.append(data)
+        return data
 
-            if row_rem != 0:
-                time.sleep(self.CRAWL_DELAY)
-
-        return out
-
-    def _valid_production_units(self, initial: list):
-        """
-        Reconstruct dict only containing rows that have p-numbers
-        """
-        return [item for item in initial if self._has_pnr(item) and self._has_cvr(item)]
-
-    @staticmethod
+    @ staticmethod
     def _has_cvr(row: dict):
         """
         Check if a smiley data row has a CVR number
         """
         return 'cvrnr' in row.keys() and row['cvrnr'] is not None
 
-    @staticmethod
+    @ staticmethod
     def _has_pnr(row: dict):
         """
         Check if a smiley data row has a p-number
@@ -168,28 +178,31 @@ class DataHandler(BaseDataHandler):
     def __init__(self):
         super().__init__()
 
-    @staticmethod
+    @ staticmethod
     def append_industry_code(soup, row):
         """
         Appends industry code and text from datacvr.virk.dk to a row
         """
-        industry_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-branchekode'})
+        industry_elem = soup.find(
+            'div', attrs={'class': 'Help-stamdata-data-branchekode'})
         if industry_elem:
             industry_elem = industry_elem.parent.parent.parent
             industry = list(industry_elem.children)[3].text.strip()
             row['industry_code'] = industry.split()[0]
-            row['industry_text'] = industry.replace(row['industry_code'], '').strip()
+            row['industry_text'] = industry.replace(
+                row['industry_code'], '').strip()
             print(f'code: {row["industry_code"]}: {row["industry_text"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
         return row
 
-    @staticmethod
+    @ staticmethod
     def append_start_date(soup, row):
         """
         Appends start date from datacvr.virk.dk to a row
         """
-        start_date_elem = soup.find('div', attrs={'class': 'Help-stamdata-data-startdato'})
+        start_date_elem = soup.find(
+            'div', attrs={'class': 'Help-stamdata-data-startdato'})
         if start_date_elem:
             start_date_elem = start_date_elem.parent.parent.parent
             row['start_date'] = list(start_date_elem.children)[3].text.strip()
@@ -198,7 +211,7 @@ class DataHandler(BaseDataHandler):
             row['industry_code'] = row['industry_text'] = None
         return row
 
-    @staticmethod
+    @ staticmethod
     def _filter_industry_codes(data):
         """
         Filters all companies that do not have a valid industry code.
@@ -209,7 +222,7 @@ class DataHandler(BaseDataHandler):
                 if 'industry_code' in item.keys()
                 and item['industry_code'] in include_codes]
 
-    @staticmethod
+    @ staticmethod
     def filter_null_control(data):
         """
         Filters all companies that have not yet received a smiley control visit.
@@ -219,16 +232,16 @@ class DataHandler(BaseDataHandler):
                 if 'seneste_kontrol' in item.keys()
                 and item['seneste_kontrol'] is not None]
 
-    @staticmethod
+    @ staticmethod
     def filter_null_coordinates(data):
         """
         Filters all companies without a longitude or latitude.
         """
         return [item
-                    for item in data
-                    if item['Geo_Lat'] != None and item['Geo_Lng'] != None]
+                for item in data
+                if item['Geo_Lat'] is not None and item['Geo_Lng'] is not None]
 
-    @staticmethod
+    @ staticmethod
     def _filter_dead_companies(data):
         """
         Excluded for now. Remove leading underscore to include.
@@ -238,7 +251,8 @@ class DataHandler(BaseDataHandler):
         """
         res = []
         for item in data:
-            last_control = datetime.strptime(item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
+            last_control = datetime.strptime(
+                item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
             now = datetime.now()
             diff = now - last_control
 
