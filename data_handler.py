@@ -100,8 +100,7 @@ class BaseDataHandler:
             if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
                 if processed_restaurants.get(restaurant['pnr']):
                     if self.is_control_newer(restaurant['seneste_kontrol_dato'], processed_restaurants.get(restaurant['pnr'])):
-                        # Delete old entry in already processed file
-                        pass
+                        del processed_restaurants[restaurant['pnr']]
                     else:
                         row_index += 1
                         continue
@@ -118,7 +117,7 @@ class BaseDataHandler:
 
         filtered = self._filter_data(temp_file.get_all())
 
-        self.output_processed_companies(filtered)
+        self.output_processed_companies(filtered, processed_restaurants)
         os.remove('temp.csv')
         temp_file.close()
 
@@ -166,19 +165,21 @@ class BaseDataHandler:
 
         return data
 
-    def output_processed_companies(self, restaurants: list):
-        file_exists = os.path.exists('processed_pnrs.csv')
+    def output_processed_companies(self, restaurants: list, processed: dict):
 
-        with open('processed_pnrs.csv', 'a+') as f:
+        with open('processed_pnrs.csv', 'w+') as f:
             fieldnames = ['pnr', 'seneste_kontrol_dato']
             writer = csv.DictWriter(
                 f, fieldnames=fieldnames, extrasaction='ignore')
 
-            if not file_exists:
-                writer.writeheader()
+            writer.writeheader()
 
             for restaurant in restaurants:
                 writer.writerow(restaurant)
+
+            for pnr, control_date in processed.items():
+                writer.writerow(
+                    {'pnr': pnr, 'seneste_kontrol_dato': control_date})
 
     def input_processed_companies(self) -> dict:
         try:
