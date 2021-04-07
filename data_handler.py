@@ -1,10 +1,8 @@
-from io import TextIOWrapper
 import json
 import time
-import csv
-import os
 
 from temp_file import TempFile
+from prev_processed_file import PrevProcessedFile
 from requests import get
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
@@ -43,7 +41,7 @@ class BaseDataHandler:
         """
         Main runner for collection
         """
-        # self._create_smiley_json()
+        self._create_smiley_json()
         self._process_smiley_json()
 
     def _create_smiley_json(self):
@@ -96,34 +94,27 @@ class BaseDataHandler:
 
         temp_file = TempFile(d[0])
 
-        processed_restaurants = self.input_processed_companies()
+        prev_processed = PrevProcessedFile()
 
         row_index = 0
 
         for restaurant in d:
             if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
-                if processed_restaurants.get(restaurant['pnr']):
-                    if self.is_control_newer(restaurant['seneste_kontrol_dato'], processed_restaurants.get(restaurant['pnr'])):
-                        # Delete old entry in already processed file
-                        pass
-                    else:
-                        row_index += 1
-                        continue
-
-                processed = self._append_additional_data(restaurant)
-
-                temp_file.add_data(processed)
-
                 row_index += 1
                 row_rem = len(d) - row_index
+                if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
+
+                    processed = self._append_additional_data(restaurant)
+                    temp_file.add_data(processed)
+
+                    if row_rem != 0:
+                        time.sleep(self.CRAWL_DELAY)
+
                 print(f'{row_rem} rows to go')
-                if row_rem != 0:
-                    time.sleep(self.CRAWL_DELAY)
 
         filtered = self._filter_data(temp_file.get_all())
 
-        self.output_processed_companies(filtered)
-        os.remove('temp.csv')
+        prev_processed.output_processed_companies(filtered)
         temp_file.close()
 
         with open(out_path, 'w') as f:
@@ -131,12 +122,6 @@ class BaseDataHandler:
 
     def valid_production_unit(self, restaurant: dict) -> bool:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
-
-    def is_control_newer(self, new_date_str: str, previous_date_str: str) -> bool:
-        date_format = '%d-%m-%Y %H:%M:%S'
-        new_date = datetime.strptime(new_date_str, date_format)
-        previous_date = datetime.strptime(previous_date_str, date_format)
-        return new_date > previous_date
 
     def _filter_data(self, data: list) -> list:
         """
@@ -175,31 +160,6 @@ class BaseDataHandler:
             data = appender(smiley_soup, data)
 
         return data
-
-    def output_processed_companies(self, restaurants: list):
-        file_exists = os.path.exists('processed_pnrs.csv')
-
-        with open('processed_pnrs.csv', 'a+') as f:
-            fieldnames = ['pnr', 'seneste_kontrol_dato']
-            writer = csv.DictWriter(
-                f, fieldnames=fieldnames, extrasaction='ignore')
-
-            if not file_exists:
-                writer.writeheader()
-
-            for restaurant in restaurants:
-                writer.writerow(restaurant)
-
-    def input_processed_companies(self) -> dict:
-        try:
-            with open('processed_pnrs.csv', 'r') as f:
-                reader = csv.DictReader(f)
-                out = dict()
-                for entry in reader:
-                    out[entry['pnr']] = entry['seneste_kontrol_dato']
-                return out
-        except FileNotFoundError:
-            return {}
 
     @ staticmethod
     def _has_cvr(row: dict):

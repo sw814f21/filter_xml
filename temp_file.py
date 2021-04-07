@@ -3,12 +3,14 @@ import csv
 
 
 class TempFile:
+    FILE_NAME = "temp.csv"
+
     def __init__(self, data_example: dict) -> None:
-        file_exists = os.path.exists('temp.csv')
+        file_exists = os.path.exists(self.FILE_NAME)
         read_append = 'r+' if file_exists else 'a+'
 
         self.__data = dict()
-        self.__file = open('temp.csv', read_append)
+        self.__file = open(self.FILE_NAME, read_append)
         self.__file_writer = self.get_file_writer(data_example)
 
         if(file_exists):
@@ -35,6 +37,7 @@ class TempFile:
 
     def close(self):
         self.__file.close()
+        os.remove(self.FILE_NAME)
 
     def contains(self, pnr: str) -> bool:
         return bool(self.__data.get(pnr))
