@@ -5,6 +5,7 @@ import csv
 import os
 
 from temp_file import TempFile
+from prev_processed_file import PrevProcessedFile
 from requests import get
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
@@ -92,15 +93,17 @@ class BaseDataHandler:
 
         temp_file = TempFile(d[0])
 
-        processed_restaurants = self.input_processed_companies()
+        prev_processed = PrevProcessedFile()
 
         row_index = 0
 
         for restaurant in d:
             if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
-                if processed_restaurants.get(restaurant['pnr']):
-                    if self.is_control_newer(restaurant['seneste_kontrol_dato'], processed_restaurants.get(restaurant['pnr'])):
-                        del processed_restaurants[restaurant['pnr']]
+                prev_processed_restaurant = prev_processed.get_by_pnr(
+                    restaurant['pnr'])
+                if prev_processed_restaurant:
+                    if self.is_control_newer(restaurant['seneste_kontrol_dato'], prev_processed_restaurant):
+                        prev_processed.delete(restaurant['pnr'])
                     else:
                         row_index += 1
                         continue
@@ -117,7 +120,7 @@ class BaseDataHandler:
 
         filtered = self._filter_data(temp_file.get_all())
 
-        self.output_processed_companies(filtered, processed_restaurants)
+        prev_processed.output_processed_companies(filtered)
         os.remove('temp.csv')
         temp_file.close()
 
@@ -164,33 +167,6 @@ class BaseDataHandler:
             data = appender(soup, data)
 
         return data
-
-    def output_processed_companies(self, restaurants: list, processed: dict):
-
-        with open('processed_pnrs.csv', 'w+') as f:
-            fieldnames = ['pnr', 'seneste_kontrol_dato']
-            writer = csv.DictWriter(
-                f, fieldnames=fieldnames, extrasaction='ignore')
-
-            writer.writeheader()
-
-            for restaurant in restaurants:
-                writer.writerow(restaurant)
-
-            for pnr, control_date in processed.items():
-                writer.writerow(
-                    {'pnr': pnr, 'seneste_kontrol_dato': control_date})
-
-    def input_processed_companies(self) -> dict:
-        try:
-            with open('processed_pnrs.csv', 'r') as f:
-                reader = csv.DictReader(f)
-                out = dict()
-                for entry in reader:
-                    out[entry['pnr']] = entry['seneste_kontrol_dato']
-                return out
-        except FileNotFoundError:
-            return {}
 
     @ staticmethod
     def _has_cvr(row: dict):
