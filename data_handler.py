@@ -121,7 +121,6 @@ class BaseDataHandler:
         filtered = self._filter_data(temp_file.get_all())
 
         prev_processed.output_processed_companies(filtered)
-        os.remove('temp.csv')
         temp_file.close()
 
         with open(out_path, 'w') as f:
