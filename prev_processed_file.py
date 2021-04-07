@@ -26,8 +26,7 @@ class PrevProcessedFile:
                 writer.writerow(
                     {'pnr': pnr, 'seneste_kontrol_dato': control_date})
 
-    def check_restaurant(self, pnr: str, control_date: str):
-        should_process = True
+    def should_process_restaurant(self, pnr: str, control_date: str):
         prev_processed_restaurant = self.get_by_pnr(pnr)
         if prev_processed_restaurant:
             if self.__is_control_newer(control_date, prev_processed_restaurant):
@@ -35,7 +34,7 @@ class PrevProcessedFile:
                 return True
             else:
                 return False
-        return should_process
+        return True
 
     def __is_control_newer(self, new_date_str: str, previous_date_str: str) -> bool:
         date_format = '%d-%m-%Y %H:%M:%S'
