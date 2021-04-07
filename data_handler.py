@@ -1,8 +1,5 @@
-from io import TextIOWrapper
 import json
 import time
-import csv
-import os
 
 from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
@@ -40,7 +37,7 @@ class BaseDataHandler:
         """
         Main runner for collection
         """
-        # self._create_smiley_json()
+        self._create_smiley_json()
         self._process_smiley_json()
 
     def _create_smiley_json(self):
