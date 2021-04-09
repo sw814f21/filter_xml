@@ -258,7 +258,7 @@ class DataHandler(BaseDataHandler):
             del row[key]
             del row[f'{key}_dato']
 
-        row['reports'] = reports
+        row['smiley_reports'] = reports
 
         return row
 
