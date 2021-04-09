@@ -99,12 +99,13 @@ class BaseDataHandler:
 
         prev_processed = PrevProcessedFile()
 
+        sample_size = self._sample_size if self._sample_size else len(d)
         row_index = 0
 
         for restaurant in d:
             if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
                 row_index += 1
-                row_rem = len(d) - row_index
+                row_rem = sample_size - row_index
                 if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
 
                     processed = self._append_additional_data(restaurant)
@@ -114,6 +115,9 @@ class BaseDataHandler:
                         time.sleep(self.CRAWL_DELAY)
 
                 print(f'{row_rem} rows to go')
+
+                if row_rem == 0:
+                    break
 
         filtered = self._filter_data(temp_file.get_all())
 
