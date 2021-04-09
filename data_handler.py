@@ -63,6 +63,7 @@ class BaseDataHandler:
             self.convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
             self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
                                 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
+            self._strip_whitespace(new_obj, 'navn1')
             res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
@@ -75,6 +76,11 @@ class BaseDataHandler:
     def convert_to_float(self, data: dict, *keys):
         for k in keys:
             data[k] = float(data[k]) if data[k] is not None else None
+
+    @staticmethod
+    def _strip_whitespace(data: dict, *keys):
+        for k in keys:
+            data[k] = data[k].strip() if data[k] is not None and type(data[k]) == str else data[k]
 
     def _retrieve_smiley_data(self):
         """
