@@ -179,6 +179,9 @@ class BaseDataHandler:
         """
         return 'pnr' in row.keys() and row['pnr'] is not None
 
+    def _rename_keys(self, data: list):
+        pass
+
 
 class DataHandler(BaseDataHandler):
     """
@@ -241,22 +244,23 @@ class DataHandler(BaseDataHandler):
         # date = t.find('p', attrs={'class': 'DateText'}).text
         # and check the date against the fields of param: row
         for tag, key in zip(tags, keys):
-            url = tag.attrs['href']
-            date = datetime.strptime(
-                row[f'{key}_dato'],
-                '%d-%m-%Y %H:%M:%S'
-            ) if row[f'{key}_dato'] else row[f'{key}_dato']
+            if row[key]:
+                url = tag.attrs['href']
+                date = datetime.strptime(
+                    row[f'{key}_dato'],
+                    '%d-%m-%Y %H:%M:%S'
+                )
 
-            d = {
-                'report_id': url.split('?')[1],
-                'smiley': row[key],
-                'date': date.strftime(ISO8601_FMT) if date else date
-            }
+                d = {
+                    'report_id': url.split('?')[1],
+                    'smiley': row[key],
+                    'date': date.strftime(ISO8601_FMT)
+                }
 
-            reports.append(d)
+                reports.append(d)
 
-            del row[key]
-            del row[f'{key}_dato']
+                del row[key]
+                del row[f'{key}_dato']
 
         row['smiley_reports'] = reports
 
