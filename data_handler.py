@@ -109,6 +109,7 @@ class BaseDataHandler:
 
                     processed = self._append_additional_data(restaurant)
                     temp_file.add_data(processed)
+                    print(processed)
 
                     if row_rem != 0:
                         time.sleep(self.CRAWL_DELAY)
@@ -244,12 +245,12 @@ class DataHandler(BaseDataHandler):
             date = datetime.strptime(
                 row[f'{key}_dato'],
                 '%d-%m-%Y %H:%M:%S'
-            )
+            ) if row[f'{key}_dato'] else row[f'{key}_dato']
 
             d = {
                 'report_id': url.split('?')[1],
                 'smiley': row[key],
-                'date': date.strftime(ISO8601_FMT)
+                'date': date.strftime(ISO8601_FMT) if date else date
             }
 
             reports.append(d)
