@@ -109,7 +109,6 @@ class BaseDataHandler:
 
                     processed = self._append_additional_data(restaurant)
                     temp_file.add_data(processed)
-                    print(processed)
 
                     if row_rem != 0:
                         time.sleep(self.CRAWL_DELAY)
@@ -120,6 +119,8 @@ class BaseDataHandler:
 
         prev_processed.output_processed_companies(filtered)
         temp_file.close()
+
+        filtered = self._rename_keys(filtered)
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
@@ -179,8 +180,30 @@ class BaseDataHandler:
         """
         return 'pnr' in row.keys() and row['pnr'] is not None
 
-    def _rename_keys(self, data: list):
-        pass
+    @staticmethod
+    def _rename_keys(data: list):
+        trans = {
+            'By': 'city',
+            'Elite_Smiley': 'elite_smiley',
+            'Geo_Lat': 'geo_lat',
+            'Geo_Lng': 'geo_lng',
+            'Kaedenavn': 'franchise_name',
+            'Pixibranche': 'niche_industry',
+            'URL': 'url',
+            'adresse1': 'address',
+            'navn1': 'name',
+            'navnelbnr': 'name_seq_nr',
+            'postnr': 'zip_code',
+            'reklame_beskyttelse': 'ad_protection',
+            'virksomhedstype': 'company_type'
+        }
+
+        for row in data:
+            for key, _trans in trans.items():
+                row[_trans] = row[key]
+                del row[key]
+
+        return data
 
 
 class DataHandler(BaseDataHandler):
@@ -230,6 +253,10 @@ class DataHandler(BaseDataHandler):
             print(f'date: {row["start_date"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
+
+        del row['branche']
+        del row['brancheKode']
+
         return row
 
     @staticmethod
