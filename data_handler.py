@@ -108,7 +108,8 @@ class BaseDataHandler:
                 row_rem = sample_size - row_index
                 if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
 
-                    processed = self._append_additional_data(restaurant)
+                    processed = restaurant if self._skip_scrape \
+                        else self._append_additional_data(restaurant)
                     temp_file.add_data(processed)
 
                     if row_rem != 0:
