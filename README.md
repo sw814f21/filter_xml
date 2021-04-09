@@ -32,10 +32,10 @@ optional arguments:
 ```
 
 #### --sample, -s
-Takes one parameter, `SIZE`, as an `int`. How many rows to process.
+Takes one parameter, `SIZE`, as an `int`. How many rows to process. Defaults to `0`, i.e. process all rows.
 
 #### --no-scrape, -ns
-Takes no parameters. Skips scraping.
+Takes no parameters. Skips scraping. Defaults to `False`, i.e. do scrape.
 
 ## Notes
 
