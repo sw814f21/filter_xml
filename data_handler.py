@@ -9,6 +9,9 @@ from xml.etree import ElementTree as ET
 from datetime import datetime
 
 
+ISO8601_FMT = '%Y-%m-%dT%H:%M:%SZ'
+
+
 class BaseDataHandler:
     """
     Base data handler class
@@ -206,7 +209,7 @@ class DataHandler(BaseDataHandler):
             row['industry_code'] = row['industry_text'] = None
         return row
 
-    @ staticmethod
+    @staticmethod
     def append_cvr_start_date(soup, row):
         """
         Appends start date from datacvr.virk.dk to a row
@@ -215,7 +218,11 @@ class DataHandler(BaseDataHandler):
             'div', attrs={'class': 'Help-stamdata-data-startdato'})
         if start_date_elem:
             start_date_elem = start_date_elem.parent.parent.parent
-            row['start_date'] = list(start_date_elem.children)[3].text.strip()
+            date = datetime.strptime(
+                list(start_date_elem.children)[3].text.strip(),
+                '%d.%m.%Y'
+            )
+            row['start_date'] = date.strftime(ISO8601_FMT)
             print(f'date: {row["start_date"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
@@ -226,6 +233,7 @@ class DataHandler(BaseDataHandler):
         tags = soup.findAll('a', attrs={'target': '_blank'})
         keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
                 'fjerdeseneste_kontrol']
+        reports = []
 
         # we assume that pdfs will continue to appear in descending order
         # if we want safe guarding against changes in order we can use
@@ -233,15 +241,23 @@ class DataHandler(BaseDataHandler):
         # and check the date against the fields of param: row
         for tag, key in zip(tags, keys):
             url = tag.attrs['href']
+            date = datetime.strptime(
+                row[f'{key}_dato'],
+                '%d-%m-%Y %H:%M:%S'
+            )
 
             d = {
                 'report_id': url.split('?')[1],
                 'smiley': row[key],
-                'date': row[f'{key}_dato']
+                'date': date.strftime(ISO8601_FMT)
             }
 
-            row[key] = d
+            reports.append(d)
+
+            del row[key]
             del row[f'{key}_dato']
+
+        row['reports'] = reports
 
         return row
 
