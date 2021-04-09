@@ -8,9 +8,6 @@ arg_parser.add_argument('--no-scrape', '-ns', action='store_true',
                         help='skip scraping during run')
 
 args = arg_parser.parse_args()
-print(args)
-print(args.sample)
-exit()
 
 if __name__ == '__main__':
     dh = DataHandler(
