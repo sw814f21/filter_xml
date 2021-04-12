@@ -83,7 +83,8 @@ class BaseDataHandler:
     @staticmethod
     def _strip_whitespace(data: dict, *keys):
         for k in keys:
-            data[k] = data[k].strip() if data[k] is not None and type(data[k]) == str else data[k]
+            data[k] = data[k].strip() if data[k] is not None and type(
+                data[k]) == str else data[k]
 
     def _retrieve_smiley_data(self):
         """
@@ -128,6 +129,8 @@ class BaseDataHandler:
 
                 if row_rem == 0:
                     break
+            else:
+                row_index += 1
 
         filtered = self._filter_data(temp_file.get_all())
 
@@ -173,7 +176,8 @@ class BaseDataHandler:
             data = appender(soup, data)
 
         smiley = get(data['URL'])
-        smiley_soup = BeautifulSoup(smiley.content.decode('utf-8'), 'html.parser')
+        smiley_soup = BeautifulSoup(
+            smiley.content.decode('utf-8'), 'html.parser')
 
         for appender in self.smiley_appenders:
             data = appender(smiley_soup, data)
