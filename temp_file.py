@@ -43,4 +43,4 @@ class TempFile:
         return bool(self.__data.get(pnr))
 
     def get_all(self) -> list:
-        return self.__data.values()
+        return list(self.__data.values())
