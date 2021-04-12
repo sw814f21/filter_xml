@@ -20,6 +20,12 @@ class TempFile:
 
     def __get_file_writer(self, data_example: dict):
         fieldnames = list(data_example.keys())
+
+        if 'pnr' not in fieldnames:
+            self.close()
+            raise ValueError(
+                'Expected pnr field to be provided in data example')
+
         return csv.DictWriter(
             self.__file, fieldnames=fieldnames, extrasaction='ignore')
 
@@ -31,6 +37,10 @@ class TempFile:
         return out
 
     def add_data(self, data: dict):
+        if 'pnr' not in data:
+            self.close()
+            raise ValueError('Expected data to have "pnr" key')
+
         self.__data[data['pnr']] = data
         self.__file_writer.writerow(data)
         self.__file.flush()
