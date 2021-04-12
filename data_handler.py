@@ -9,6 +9,9 @@ from xml.etree import ElementTree as ET
 from datetime import datetime
 
 
+ISO8601_FMT = '%Y-%m-%dT%H:%M:%SZ'
+
+
 class BaseDataHandler:
     """
     Base data handler class
@@ -63,6 +66,7 @@ class BaseDataHandler:
             self.convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
             self.convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
                                 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
+            self._strip_whitespace(new_obj, 'navn1')
             res.append(new_obj)
 
         with open(self.SMILEY_JSON, 'w') as f:
@@ -75,6 +79,11 @@ class BaseDataHandler:
     def convert_to_float(self, data: dict, *keys):
         for k in keys:
             data[k] = float(data[k]) if data[k] is not None else None
+
+    @staticmethod
+    def _strip_whitespace(data: dict, *keys):
+        for k in keys:
+            data[k] = data[k].strip() if data[k] is not None and type(data[k]) == str else data[k]
 
     def _retrieve_smiley_data(self):
         """
@@ -112,7 +121,7 @@ class BaseDataHandler:
                         else self._append_additional_data(restaurant)
                     temp_file.add_data(processed)
 
-                    if row_rem != 0:
+                    if row_rem != 0 and not self._skip_scrape:
                         time.sleep(self.CRAWL_DELAY)
 
                 print(f'{row_rem} rows to go')
@@ -124,6 +133,8 @@ class BaseDataHandler:
 
         prev_processed.output_processed_companies(filtered)
         temp_file.close()
+
+        filtered = self._rename_keys(filtered)
 
         with open(out_path, 'w') as f:
             f.write(json.dumps(filtered, indent=4))
@@ -183,6 +194,31 @@ class BaseDataHandler:
         """
         return 'pnr' in row.keys() and row['pnr'] is not None
 
+    @staticmethod
+    def _rename_keys(data: list):
+        trans = {
+            'By': 'city',
+            'Elite_Smiley': 'elite_smiley',
+            'Geo_Lat': 'geo_lat',
+            'Geo_Lng': 'geo_lng',
+            'Kaedenavn': 'franchise_name',
+            'Pixibranche': 'niche_industry',
+            'URL': 'url',
+            'adresse1': 'address',
+            'navn1': 'name',
+            'navnelbnr': 'name_seq_nr',
+            'postnr': 'zip_code',
+            'reklame_beskyttelse': 'ad_protection',
+            'virksomhedstype': 'company_type'
+        }
+
+        for row in data:
+            for key, _trans in trans.items():
+                row[_trans] = row[key]
+                del row[key]
+
+        return data
+
 
 class DataHandler(BaseDataHandler):
     """
@@ -214,7 +250,7 @@ class DataHandler(BaseDataHandler):
             row['industry_code'] = row['industry_text'] = None
         return row
 
-    @ staticmethod
+    @staticmethod
     def append_cvr_start_date(soup, row):
         """
         Appends start date from datacvr.virk.dk to a row
@@ -223,10 +259,18 @@ class DataHandler(BaseDataHandler):
             'div', attrs={'class': 'Help-stamdata-data-startdato'})
         if start_date_elem:
             start_date_elem = start_date_elem.parent.parent.parent
-            row['start_date'] = list(start_date_elem.children)[3].text.strip()
+            date = datetime.strptime(
+                list(start_date_elem.children)[3].text.strip(),
+                '%d.%m.%Y'
+            )
+            row['start_date'] = date.strftime(ISO8601_FMT)
             print(f'date: {row["start_date"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
+
+        del row['branche']
+        del row['brancheKode']
+
         return row
 
     @staticmethod
@@ -234,22 +278,32 @@ class DataHandler(BaseDataHandler):
         tags = soup.findAll('a', attrs={'target': '_blank'})
         keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
                 'fjerdeseneste_kontrol']
+        reports = []
 
         # we assume that pdfs will continue to appear in descending order
         # if we want safe guarding against changes in order we can use
         # date = t.find('p', attrs={'class': 'DateText'}).text
         # and check the date against the fields of param: row
         for tag, key in zip(tags, keys):
-            url = tag.attrs['href']
+            if row[key]:
+                url = tag.attrs['href']
+                date = datetime.strptime(
+                    row[f'{key}_dato'],
+                    '%d-%m-%Y %H:%M:%S'
+                )
 
-            d = {
-                'report_id': url.split('?')[1],
-                'smiley': row[key],
-                'date': row[f'{key}_dato']
-            }
+                d = {
+                    'report_id': url.split('?')[1],
+                    'smiley': row[key],
+                    'date': date.strftime(ISO8601_FMT)
+                }
 
-            row[key] = d
-            del row[f'{key}_dato']
+                reports.append(d)
+
+                del row[key]
+                del row[f'{key}_dato']
+
+        row['smiley_reports'] = reports
 
         return row
 
