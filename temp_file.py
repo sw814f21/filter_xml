@@ -11,19 +11,19 @@ class TempFile:
 
         self.__data = dict()
         self.__file = open(self.FILE_NAME, read_append)
-        self.__file_writer = self.get_file_writer(data_example)
+        self.__file_writer = self.__get_file_writer(data_example)
 
         if(file_exists):
-            self.__data = self.read_temp_data()
+            self.__data = self.__read_temp_data()
         else:
             self.__file_writer.writeheader()
 
-    def get_file_writer(self, data_example: dict):
+    def __get_file_writer(self, data_example: dict):
         fieldnames = list(data_example.keys())
         return csv.DictWriter(
             self.__file, fieldnames=fieldnames, extrasaction='ignore')
 
-    def read_temp_data(self) -> dict:
+    def __read_temp_data(self) -> dict:
         reader = csv.DictReader(self.__file)
         out = dict()
         for entry in reader:
