@@ -26,7 +26,10 @@ class BaseDataHandler:
     BASE_CVR_URL = 'https://datacvr.virk.dk/data/'
     CRAWL_CVR_URL = f'{BASE_CVR_URL}visenhed'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        self._sample_size = kwargs.pop('sample', 0)
+        self._skip_scrape = kwargs.pop('no_scrape', False)
+
         self.filters = [getattr(self.__class__, fun)
                         for fun in dir(self.__class__)
                         if callable(getattr(self.__class__, fun))
@@ -105,21 +108,26 @@ class BaseDataHandler:
 
         prev_processed = PrevProcessedFile()
 
+        sample_size = self._sample_size if self._sample_size else len(d)
         row_index = 0
 
         for restaurant in d:
             if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
                 row_index += 1
-                row_rem = len(d) - row_index
+                row_rem = sample_size - row_index
                 if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
 
-                    processed = self._append_additional_data(restaurant)
+                    processed = restaurant if self._skip_scrape \
+                        else self._append_additional_data(restaurant)
                     temp_file.add_data(processed)
 
                     if row_rem != 0:
                         time.sleep(self.CRAWL_DELAY)
 
                 print(f'{row_rem} rows to go')
+
+                if row_rem == 0:
+                    break
 
         filtered = self._filter_data(temp_file.get_all())
 
@@ -221,8 +229,8 @@ class DataHandler(BaseDataHandler):
     Filters should be prefixed by 'filter_' and should have param 'data'
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @ staticmethod
     def append_cvr_industry_code(soup, row):
