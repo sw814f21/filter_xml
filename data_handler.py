@@ -121,7 +121,7 @@ class BaseDataHandler:
                         else self._append_additional_data(restaurant)
                     temp_file.add_data(processed)
 
-                    if row_rem != 0:
+                    if row_rem != 0 and not self._skip_scrape:
                         time.sleep(self.CRAWL_DELAY)
 
                 print(f'{row_rem} rows to go')
