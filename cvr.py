@@ -1,3 +1,5 @@
+import json
+
 from requests import get
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -78,8 +80,36 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
         super().__init__()
 
     def collect_data(self, data: dict):
+        print('-' * 40)
+        print(f'{data["navn1"]} | {data["pnr"]}')
+        params = {
+            'produ': data["pnr"],
+            'country': 'dk',
+            'token': FilterXMLConfig.cvrapi_api_key()
+        }
+
+        res = get(self.URL, params=params)
+        content = json.loads(res.content.decode('utf-8'))
+
+        if content:
+            for appender in self.appenders:
+                data = appender(content, data)
 
         return super().collect_data(data)
+
+    @staticmethod
+    def append_cvrapi_industry_code(content, row):
+        row['industry_code'] = str(content['industrycode'])
+        row['industry_text'] = content['industrydesc']
+        del row['branche']
+        del row['brancheKode']
+        return row
+
+    @staticmethod
+    def append_cvrapi_start_date(content, row):
+        date = datetime.strptime(content['startdate'], '%d/%m - %Y')
+        row['start_date'] = date.strftime(FilterXMLConfig.iso_fmt())
+        return row
 
 
 class CVRHandlerScrape(CVRHandlerBase):
@@ -124,6 +154,10 @@ class CVRHandlerScrape(CVRHandlerBase):
             print(f'code: {row["industry_code"]}: {row["industry_text"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
+
+        del row['branche']
+        del row['brancheKode']
+
         return row
 
     @staticmethod
@@ -142,10 +176,7 @@ class CVRHandlerScrape(CVRHandlerBase):
             row['start_date'] = date.strftime(FilterXMLConfig.iso_fmt())
             print(f'date: {row["start_date"]}')
         else:
-            row['industry_code'] = row['industry_text'] = None
-
-        del row['branche']
-        del row['brancheKode']
+            row['start_date'] = None
 
         return row
 
