@@ -226,15 +226,19 @@ class DataHandler(BaseDataHandler):
         """
         Filters all companies that have not yet received a smiley control visit.
         """
-        return 'seneste_kontrol' in data.keys() and data['seneste_kontrol'] is not None
+        res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
+        print(f'null control: {res}')
+        return res
 
     @ staticmethod
     def filter_null_coordinates(data: dict):
         """
         Filters all companies without a longitude or latitude.
         """
-        return 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
-               and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
+        res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
+              and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
+        print(f'null coords: {res}')
+        return res
 
     @ staticmethod
     def _filter_dead_companies(data: dict):
