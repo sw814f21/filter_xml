@@ -215,12 +215,14 @@ class DataHandler(BaseDataHandler):
         super().__init__(*args, **kwargs)
 
     @ staticmethod
-    def _filter_industry_codes(data: dict):
+    def filter_industry_codes(data: dict):
         """
         Filters all companies that do not have a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        return 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        print(f'valid industry code: {res}')
+        return res
 
     @ staticmethod
     def filter_null_control(data: dict):
@@ -228,7 +230,7 @@ class DataHandler(BaseDataHandler):
         Filters all companies that have not yet received a smiley control visit.
         """
         res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
-        print(f'null control: {res}')
+        print(f'control not null: {res}')
         return res
 
     @ staticmethod
@@ -238,20 +240,5 @@ class DataHandler(BaseDataHandler):
         """
         res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
               and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
-        print(f'null coords: {res}')
+        print(f'coords not null: {res}')
         return res
-
-    @ staticmethod
-    def _filter_dead_companies(data: dict):
-        """
-        Excluded for now. Remove leading underscore to include.
-
-        Filters all companies that are presumed dead - i.e., has not received a smiley control visit
-        within the last year.
-        """
-        last_control = datetime.strptime(
-            data['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
-        now = datetime.now()
-        diff = now - last_control
-
-        return diff.days < 365
