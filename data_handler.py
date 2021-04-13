@@ -102,38 +102,58 @@ class BaseDataHandler:
 
         prev_processed = PrevProcessedFile()
 
-        sample_size = self._sample_size if self._sample_size else len(d)
-        row_index = 0
+        res = temp_file.get_all()
+        total_rows = len(d)
 
         for restaurant in d:
-            if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
-                row_index += 1
-                row_rem = sample_size - row_index
-                if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
+            # we use this to avoid using the same fallback in three separate if statements
+            row_kept = False
 
+            # if sample size CLI arg is supplied, stop when its reached
+            if self._sample_size and len(res) == self._sample_size:
+                break
+
+            # first check if the restaurant is valid
+            if self.valid_production_unit(restaurant):
+
+                # then ensure it hasn't already been processed prior to a crash, and
+                # that it should be processed at all cf. previously processed restaurants
+                if not temp_file.contains(restaurant['pnr']) \
+                        and prev_processed.should_process_restaurant(restaurant):
+
+                    # only sleep if --no-scrape is not passed, and if our cvr provider requests it.
+                    # we sleep before processing the next so we avoid sleeping after the last
+                    # row has been processed
+                    if not self._skip_scrape and self.cvr_handler.SHOULD_SLEEP:
+                        time.sleep(self.cvr_handler.CRAWL_DELAY)
+
+                    # only collect data if we haven't passed --no-scrape
                     processed = restaurant if self._skip_scrape \
                         else self.cvr_handler.collect_data(restaurant)
-                    temp_file.add_data(processed)
 
-                    if row_rem != 0 and not self._skip_scrape:
-                        time.sleep(self.CRAWL_DELAY)
+                    # check filters to see if we should keep the row
+                    if self._should_keep(processed):
+                        res.append(processed)
+                        temp_file.add_data(processed)
+                        row_kept = True
 
-                print(f'{row_rem} rows to go')
+            # if any check resulted in a row skip, decrement the total row count
+            # for terminal output purposes
+            if not row_kept:
+                total_rows -= 1
 
-                if row_rem == 0:
-                    break
+            if self._sample_size:
+                print(f'Collected {len(res)} of {self._sample_size} samples')
             else:
-                row_index += 1
+                print(f'{total_rows - len(res)} rows to go')
 
-        filtered = self._filter_data(temp_file.get_all())
-
-        prev_processed.output_processed_companies(filtered)
+        prev_processed.output_processed_companies(res)
         temp_file.close()
 
-        filtered = self._rename_keys(filtered)
+        res = self._rename_keys(res)
 
         with open(out_path, 'w') as f:
-            f.write(json.dumps(filtered, indent=4))
+            f.write(json.dumps(res, indent=4))
 
     def valid_production_unit(self, restaurant: dict) -> bool:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
@@ -146,6 +166,12 @@ class BaseDataHandler:
             data = _filter(data)
 
         return data
+
+    def _should_keep(self, data: dict) -> bool:
+        """
+        Apply filters to see if row should be kept in result
+        """
+        res = []
 
     @ staticmethod
     def _has_cvr(row: dict):
