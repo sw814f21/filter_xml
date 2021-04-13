@@ -224,50 +224,39 @@ class DataHandler(BaseDataHandler):
         super().__init__(*args, **kwargs)
 
     @ staticmethod
-    def _filter_industry_codes(data):
+    def _filter_industry_codes(data: dict):
         """
         Filters all companies that do not have a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        return [item
-                for item in data
-                if 'industry_code' in item.keys()
-                and item['industry_code'] in include_codes]
+        return 'industry_code' in data.keys() and data['industry_code'] in include_codes
 
     @ staticmethod
-    def filter_null_control(data):
+    def filter_null_control(data: dict):
         """
         Filters all companies that have not yet received a smiley control visit.
         """
-        return [item
-                for item in data
-                if 'seneste_kontrol' in item.keys()
-                and item['seneste_kontrol'] is not None]
+        return 'seneste_kontrol' in data.keys() and data['seneste_kontrol'] is not None
 
     @ staticmethod
-    def filter_null_coordinates(data):
+    def filter_null_coordinates(data: dict):
         """
         Filters all companies without a longitude or latitude.
         """
-        return [item
-                for item in data
-                if item['Geo_Lat'] is not None and item['Geo_Lng'] is not None]
+        return 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
+               and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
 
     @ staticmethod
-    def _filter_dead_companies(data):
+    def _filter_dead_companies(data: dict):
         """
         Excluded for now. Remove leading underscore to include.
 
         Filters all companies that are presumed dead - i.e., has not received a smiley control visit
         within the last year.
         """
-        res = []
-        for item in data:
-            last_control = datetime.strptime(
-                item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
-            now = datetime.now()
-            diff = now - last_control
+        last_control = datetime.strptime(
+            data['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
+        now = datetime.now()
+        diff = now - last_control
 
-            if diff.days < 365:
-                res.append(item)
-        return res
+        return diff.days < 365
