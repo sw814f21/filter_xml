@@ -8,6 +8,8 @@ from config import FilterXMLConfig
 
 class CVRHandlerBase:
     URL = ''
+    SHOULD_SLEEP = False
+    CRAWL_DELAY = 0
 
     def __init__(self):
         self.appenders = [getattr(self.__class__, fun)
@@ -114,10 +116,11 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
 
 class CVRHandlerScrape(CVRHandlerBase):
     URL = 'https://datacvr.virk.dk/data/visenhed'
+    SHOULD_SLEEP = True
+    CRAWL_DELAY = 10
 
     def __init__(self):
         super().__init__()
-        print(self.appenders)
 
     def collect_data(self, data: dict):
         print('-' * 40)
