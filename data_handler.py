@@ -7,9 +7,8 @@ from requests import get
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
 from datetime import datetime
-
-
-ISO8601_FMT = '%Y-%m-%dT%H:%M:%SZ'
+from config import FilterXMLConfig
+from cvr import get_cvr_handler
 
 
 class BaseDataHandler:
@@ -29,6 +28,8 @@ class BaseDataHandler:
     def __init__(self, *args, **kwargs):
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
+
+        self.cvr_handler = get_cvr_handler()
 
         self.filters = [getattr(self.__class__, fun)
                         for fun in dir(self.__class__)
@@ -267,7 +268,7 @@ class DataHandler(BaseDataHandler):
                 list(start_date_elem.children)[3].text.strip(),
                 '%d.%m.%Y'
             )
-            row['start_date'] = date.strftime(ISO8601_FMT)
+            row['start_date'] = date.strftime(FilterXMLConfig.iso_fmt())
             print(f'date: {row["start_date"]}')
         else:
             row['industry_code'] = row['industry_text'] = None
@@ -299,7 +300,7 @@ class DataHandler(BaseDataHandler):
                 d = {
                     'report_id': url.split('?')[1],
                     'smiley': row[key],
-                    'date': date.strftime(ISO8601_FMT)
+                    'date': date.strftime(FilterXMLConfig.iso_fmt())
                 }
 
                 reports.append(d)
