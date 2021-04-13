@@ -1,5 +1,20 @@
 # Smiley data handler
 
+## Configuration
+
+First copy `config.sample.ini` to `config.ini`, then fill out the missing fields.
+
+- `[cvr]`
+    - `provider`, valid choices: `[ cvrapi | virk | scrape ]`
+        - `cvrapi`, request data from [cvrapi](https://cvrapi.dk/)
+            - no limit, no delay
+            - requires `[cvrapi]`
+        - `virk`, TBA - virk API
+        - `scrape`, scrape from [Virk CVR data](https://datacvr.virk.dk/data/)
+            - 10s delay
+- `[cvrapi]`
+    - `api_key`, API key for [cvrapi](https://cvrapi.dk/)
+
 ## Running
 To run
 ```shell
