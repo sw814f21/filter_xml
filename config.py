@@ -11,7 +11,7 @@ class FilterXMLConfig:
 
     @classmethod
     def iso_fmt(cls):
-        return cls.open_config().get('misc', 'iso_fmt')
+        return '%Y-%m-%dT%H:%M:%SZ'
 
     @classmethod
     def cvr_provider(cls):
