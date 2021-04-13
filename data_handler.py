@@ -18,10 +18,6 @@ class BaseDataHandler:
     SMILEY_XML = 'smiley_xml.xml'
     SMILEY_JSON = 'smiley_json.json'
 
-    CRAWL_DELAY = 10
-    BASE_CVR_URL = 'https://datacvr.virk.dk/data/'
-    CRAWL_CVR_URL = f'{BASE_CVR_URL}visenhed'
-
     def __init__(self, *args, **kwargs):
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
