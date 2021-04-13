@@ -26,7 +26,9 @@ class PrevProcessedFile:
                 writer.writerow(
                     {'pnr': pnr, 'seneste_kontrol_dato': control_date})
 
-    def should_process_restaurant(self, pnr: str, control_date: str):
+    def should_process_restaurant(self, restaurant: dict):
+        pnr = restaurant['pnr']
+        control_date = restaurant['seneste_kontrol_dato']
         prev_processed_restaurant = self.get_by_pnr(pnr)
         if prev_processed_restaurant:
             if self.__is_control_newer(control_date, prev_processed_restaurant):
