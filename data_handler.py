@@ -5,7 +5,6 @@ from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
 from requests import get
 from xml.etree import ElementTree as ET
-from datetime import datetime
 from cvr import get_cvr_handler
 
 
@@ -63,11 +62,13 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'w') as f:
             f.write(json.dumps(res, indent=4, sort_keys=True))
 
-    def convert_to_int(self, data: dict, *keys):
+    @staticmethod
+    def convert_to_int(data: dict, *keys):
         for k in keys:
             data[k] = int(data[k]) if data[k] is not None else None
 
-    def convert_to_float(self, data: dict, *keys):
+    @staticmethod
+    def convert_to_float(data: dict, *keys):
         for k in keys:
             data[k] = float(data[k]) if data[k] is not None else None
 
@@ -91,7 +92,7 @@ class BaseDataHandler:
             Includes only production units
             Applies filters and appends from DataHandler
         """
-        out_path = f'smiley_json_processed.json'
+        out_path = 'smiley_json_processed.json'
 
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
