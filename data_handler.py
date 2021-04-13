@@ -102,6 +102,7 @@ class BaseDataHandler:
 
         res = temp_file.get_all()
         total_rows = len(d)
+        row_index = 0
 
         for restaurant in d:
             # we use this to avoid using the same fallback in three separate if statements
@@ -120,9 +121,7 @@ class BaseDataHandler:
                         and prev_processed.should_process_restaurant(restaurant):
 
                     # only sleep if --no-scrape is not passed, and if our cvr provider requests it.
-                    # we sleep before processing the next so we avoid sleeping after the last
-                    # row has been processed
-                    if not self._skip_scrape and self.cvr_handler.SHOULD_SLEEP:
+                    if not self._skip_scrape and self.cvr_handler.SHOULD_SLEEP and row_index > 0:
                         time.sleep(self.cvr_handler.CRAWL_DELAY)
 
                     # only collect data if we haven't passed --no-scrape
@@ -144,6 +143,8 @@ class BaseDataHandler:
                 print(f'Collected {len(res)} of {self._sample_size} samples')
             else:
                 print(f'{total_rows - len(res)} rows to go')
+
+            row_index += 1
 
         prev_processed.output_processed_companies(res)
         temp_file.close()
