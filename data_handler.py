@@ -35,14 +35,6 @@ class BaseDataHandler:
                         for fun in dir(self.__class__)
                         if callable(getattr(self.__class__, fun))
                         and fun.startswith('filter_')]
-        self.cvr_appenders = [getattr(self.__class__, fun)
-                              for fun in dir(self.__class__)
-                              if callable(getattr(self.__class__, fun))
-                              and fun.startswith('append_cvr')]
-        self.smiley_appenders = [getattr(self.__class__, fun)
-                                 for fun in dir(self.__class__)
-                                 if callable(getattr(self.__class__, fun))
-                                 and fun.startswith('append_smiley')]
 
     def collect(self):
         """
@@ -120,7 +112,7 @@ class BaseDataHandler:
                 if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
 
                     processed = restaurant if self._skip_scrape \
-                        else self._append_additional_data(restaurant)
+                        else self.cvr_handler.collect_data(restaurant)
                     temp_file.add_data(processed)
 
                     if row_rem != 0 and not self._skip_scrape:
@@ -152,36 +144,6 @@ class BaseDataHandler:
         """
         for _filter in self.filters:
             data = _filter(data)
-
-        return data
-
-    def _append_additional_data(self, data: dict) -> dict:
-        """
-        run append methods on the data
-        """
-
-        print('-' * 40)
-        print(f'{data["navn1"]} | {data["pnr"]}')
-        params = {
-            'enhedstype': 'produktionsenhed',
-            'id': data['pnr'],
-            'language': 'da',
-            'soeg': data['pnr'],
-        }
-
-        print(f'{self.CRAWL_CVR_URL} | {params}')
-        res = get(self.CRAWL_CVR_URL, params=params)
-        soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
-
-        for appender in self.cvr_appenders:
-            data = appender(soup, data)
-
-        smiley = get(data['URL'])
-        smiley_soup = BeautifulSoup(
-            smiley.content.decode('utf-8'), 'html.parser')
-
-        for appender in self.smiley_appenders:
-            data = appender(smiley_soup, data)
 
         return data
 
@@ -227,90 +189,13 @@ class BaseDataHandler:
 
 class DataHandler(BaseDataHandler):
     """
-    Define appenders and filters here.
+    Define filters here.
 
-    Appenders should be prefixed by 'append_' and should have params 'soup' and 'row'
-        It is assumed that every appender works on an HTML soup from datacvr.virk.dk
     Filters should be prefixed by 'filter_' and should have param 'data'
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    @ staticmethod
-    def append_cvr_industry_code(soup, row):
-        """
-        Appends industry code and text from datacvr.virk.dk to a row
-        """
-        industry_elem = soup.find(
-            'div', attrs={'class': 'Help-stamdata-data-branchekode'})
-        if industry_elem:
-            industry_elem = industry_elem.parent.parent.parent
-            industry = list(industry_elem.children)[3].text.strip()
-            row['industry_code'] = industry.split()[0]
-            row['industry_text'] = industry.replace(
-                row['industry_code'], '').strip()
-            print(f'code: {row["industry_code"]}: {row["industry_text"]}')
-        else:
-            row['industry_code'] = row['industry_text'] = None
-        return row
-
-    @staticmethod
-    def append_cvr_start_date(soup, row):
-        """
-        Appends start date from datacvr.virk.dk to a row
-        """
-        start_date_elem = soup.find(
-            'div', attrs={'class': 'Help-stamdata-data-startdato'})
-        if start_date_elem:
-            start_date_elem = start_date_elem.parent.parent.parent
-            date = datetime.strptime(
-                list(start_date_elem.children)[3].text.strip(),
-                '%d.%m.%Y'
-            )
-            row['start_date'] = date.strftime(FilterXMLConfig.iso_fmt())
-            print(f'date: {row["start_date"]}')
-        else:
-            row['industry_code'] = row['industry_text'] = None
-
-        del row['branche']
-        del row['brancheKode']
-
-        return row
-
-    @staticmethod
-    def append_smiley_reports(soup, row):
-        tags = soup.findAll('a', attrs={'target': '_blank'})
-        keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
-                'fjerdeseneste_kontrol']
-        reports = []
-
-        # we assume that pdfs will continue to appear in descending order
-        # if we want safe guarding against changes in order we can use
-        # date = t.find('p', attrs={'class': 'DateText'}).text
-        # and check the date against the fields of param: row
-        for tag, key in zip(tags, keys):
-            if row[key]:
-                url = tag.attrs['href']
-                date = datetime.strptime(
-                    row[f'{key}_dato'],
-                    '%d-%m-%Y %H:%M:%S'
-                )
-
-                d = {
-                    'report_id': url.split('?')[1],
-                    'smiley': row[key],
-                    'date': date.strftime(FilterXMLConfig.iso_fmt())
-                }
-
-                reports.append(d)
-
-                del row[key]
-                del row[f'{key}_dato']
-
-        row['smiley_reports'] = reports
-
-        return row
 
     @ staticmethod
     def _filter_industry_codes(data):
