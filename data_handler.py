@@ -4,10 +4,8 @@ import time
 from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
 from requests import get
-from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
 from datetime import datetime
-from config import FilterXMLConfig
 from cvr import get_cvr_handler
 
 
@@ -158,20 +156,12 @@ class BaseDataHandler:
     def valid_production_unit(self, restaurant: dict) -> bool:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
 
-    def _filter_data(self, data: list) -> list:
-        """
-        Apply filters
-        """
-        for _filter in self.filters:
-            data = _filter(data)
-
-        return data
-
     def _should_keep(self, data: dict) -> bool:
         """
         Apply filters to see if row should be kept in result
         """
-        res = []
+        res = [_filter(data) for _filter in self.filters]
+        return all(res)
 
     @ staticmethod
     def _has_cvr(row: dict):
