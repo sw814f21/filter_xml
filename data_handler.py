@@ -1,10 +1,11 @@
 import json
 import time
 
-from temp_file import TempFile
-from prev_processed_file import PrevProcessedFile
 from requests import get
 from xml.etree import ElementTree as ET
+
+from temp_file import TempFile
+from prev_processed_file import PrevProcessedFile
 from cvr import get_cvr_handler
 
 
