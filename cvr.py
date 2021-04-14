@@ -16,10 +16,7 @@ class CVRHandlerBase:
                           for fun in dir(self.__class__)
                           if callable(getattr(self.__class__, fun))
                           and fun.startswith('append_')]
-        self.smiley_appenders = [getattr(self.__class__, fun)
-                                 for fun in dir(self.__class__)
-                                 if callable(getattr(self.__class__, fun))
-                                 and fun.startswith('findsmiley_')]
+        self.smiley_appenders = [self.findsmiley_append_reports]
 
     def collect_data(self, data: dict):
         smiley = get(data['URL'])
