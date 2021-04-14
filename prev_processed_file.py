@@ -31,14 +31,16 @@ class PrevProcessedFile:
         control_date = restaurant['seneste_kontrol_dato']
         prev_processed_restaurant = self.get_by_pnr(pnr)
         if prev_processed_restaurant:
-            if self.__is_control_newer(control_date, prev_processed_restaurant):
+            if self.__is_control_newer(control_date,
+                                       prev_processed_restaurant['seneste_kontrol_dato']):
                 self.__delete(pnr)
                 return True
             else:
                 return False
         return True
 
-    def __is_control_newer(self, new_date_str: str, previous_date_str: str) -> bool:
+    @staticmethod
+    def __is_control_newer(new_date_str: str, previous_date_str: str) -> bool:
         date_format = '%d-%m-%Y %H:%M:%S'
         new_date = datetime.strptime(new_date_str, date_format)
         previous_date = datetime.strptime(previous_date_str, date_format)
