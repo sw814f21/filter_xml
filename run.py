@@ -1,5 +1,6 @@
-from data_handler import DataHandler
 from argparse import ArgumentParser
+
+from data_handler import DataHandler
 
 arg_parser = ArgumentParser()
 arg_parser.add_argument('--sample', '-s', nargs='?', metavar='SIZE', type=int, default=0,
