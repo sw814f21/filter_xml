@@ -44,6 +44,7 @@ optional arguments:
   --sample [SIZE], -s [SIZE]
                         sample size, default: 0 (full run)
   --no-scrape, -ns      skip scraping during run
+  --push, -p            push output onto database instead of writing to file
 ```
 
 #### --sample, -s
