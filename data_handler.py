@@ -25,19 +25,20 @@ class BaseDataHandler:
 
         self.cvr_handler = get_cvr_handler()
 
+        # collect all class methods prefixed by 'filter_'
         self.filters = [getattr(self.__class__, fun)
                         for fun in dir(self.__class__)
                         if callable(getattr(self.__class__, fun))
                         and fun.startswith('filter_')]
 
-    def collect(self):
+    def collect(self) -> None:
         """
         Main runner for collection
         """
         self._create_smiley_json()
         self._process_smiley_json()
 
-    def _create_smiley_json(self):
+    def _create_smiley_json(self) -> None:
         """
         Create .json file from smiley XML data from Fødevarestyrelsen.
         """
@@ -60,22 +61,31 @@ class BaseDataHandler:
             f.write(json.dumps(res, indent=4, sort_keys=True))
 
     @staticmethod
-    def convert_to_int(data: dict, *keys):
+    def convert_to_int(data: dict, *keys) -> None:
+        """
+        Convert a set of values to ints if they exist
+        """
         for k in keys:
             data[k] = int(data[k]) if data[k] is not None else None
 
     @staticmethod
-    def convert_to_float(data: dict, *keys):
+    def convert_to_float(data: dict, *keys) -> None:
+        """
+        Convert a set of values to floats if they exist
+        """
         for k in keys:
             data[k] = float(data[k]) if data[k] is not None else None
 
     @staticmethod
-    def _strip_whitespace(data: dict, *keys):
+    def _strip_whitespace(data: dict, *keys) -> None:
+        """
+        Strip whitespace from a set of values if applicable
+        """
         for k in keys:
             data[k] = data[k].strip() if data[k] is not None and type(
                 data[k]) == str else data[k]
 
-    def _retrieve_smiley_data(self):
+    def _retrieve_smiley_data(self) -> None:
         """
         Download smiley XML data from Fødevarestyrelsen.
         """
@@ -83,11 +93,21 @@ class BaseDataHandler:
         with open(self.SMILEY_XML, 'w') as f:
             f.write(res.content.decode('utf-8'))
 
-    def _process_smiley_json(self):
+    def _process_smiley_json(self) -> None:
         """
         Processes smiley .json file.
             Includes only production units
-            Applies filters and appends from DataHandler
+            Applies filters from DataHandler
+            Collects additional, external data through CVRHandler
+
+        Restaurants that have already been processed (i.e., external data has been collected) are
+        stored in processed_pnrs.csv - handled by PrevProcessedFile.
+
+        Restaurants that have been processed during the current session are stored in
+        temp.csv - handled by TempFile. This is done to save progress in the case of a crash
+        during the run.
+
+        Once data has been processed, keys are renamed. Cf. the translation map in _rename_keys()
         """
         out_path = 'smiley_json_processed.json'
 
@@ -153,6 +173,10 @@ class BaseDataHandler:
             f.write(json.dumps(res, indent=4))
 
     def valid_production_unit(self, restaurant: dict) -> bool:
+        """
+        Check if a restaurant is a valid production unit, by checking if they have both a
+        p-number and a CVR number.
+        """
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
 
     def _should_keep(self, data: dict) -> bool:
@@ -163,21 +187,24 @@ class BaseDataHandler:
         return all(res)
 
     @ staticmethod
-    def _has_cvr(row: dict):
+    def _has_cvr(row: dict) -> bool:
         """
         Check if a smiley data row has a CVR number
         """
         return 'cvrnr' in row.keys() and row['cvrnr'] is not None
 
     @ staticmethod
-    def _has_pnr(row: dict):
+    def _has_pnr(row: dict) -> bool:
         """
         Check if a smiley data row has a p-number
         """
         return 'pnr' in row.keys() and row['pnr'] is not None
 
     @staticmethod
-    def _rename_keys(data: list):
+    def _rename_keys(data: list) -> list:
+        """
+        Rename keys in each row.
+        """
         trans = {
             'By': 'city',
             'Elite_Smiley': 'elite_smiley',
@@ -206,16 +233,17 @@ class DataHandler(BaseDataHandler):
     """
     Define filters here.
 
-    Filters should be prefixed by 'filter_' and should have param 'data'
+    Filters should be prefixed by 'filter_' and should have param 'data' of type dict, i.e., a row
+    of data. All filters should be static.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @ staticmethod
-    def filter_industry_codes(data: dict):
+    def filter_industry_codes(data: dict) -> bool:
         """
-        Filters all companies that do not have a valid industry code.
+        Checks if row 'data' has a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
         res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
@@ -223,18 +251,18 @@ class DataHandler(BaseDataHandler):
         return res
 
     @ staticmethod
-    def filter_null_control(data: dict):
+    def filter_null_control(data: dict) -> bool:
         """
-        Filters all companies that have not yet received a smiley control visit.
+        Checks if row 'data' has received at least 1 control check.
         """
         res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
         print(f'control not null: {res}')
         return res
 
     @ staticmethod
-    def filter_null_coordinates(data: dict):
+    def filter_null_coordinates(data: dict) -> bool:
         """
-        Filters all companies without a longitude or latitude.
+        Checks if row 'data' has valid coordinates.
         """
         res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
               and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
