@@ -13,7 +13,7 @@ class TempFile:
         self.__file = open(self.FILE_NAME, read_append)
         self.__file_writer = self.__get_file_writer(data_example)
 
-        if(file_exists):
+        if file_exists:
             self.__data = self.__read_temp_data()
         else:
             self.__file_writer.writeheader()
