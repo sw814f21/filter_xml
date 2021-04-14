@@ -4,12 +4,8 @@ import time
 from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
 from requests import get
-from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
-from datetime import datetime
-
-
-ISO8601_FMT = '%Y-%m-%dT%H:%M:%SZ'
+from cvr import get_cvr_handler
 
 
 class BaseDataHandler:
@@ -22,26 +18,16 @@ class BaseDataHandler:
     SMILEY_XML = 'smiley_xml.xml'
     SMILEY_JSON = 'smiley_json.json'
 
-    CRAWL_DELAY = 10
-    BASE_CVR_URL = 'https://datacvr.virk.dk/data/'
-    CRAWL_CVR_URL = f'{BASE_CVR_URL}visenhed'
-
     def __init__(self, *args, **kwargs):
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
+
+        self.cvr_handler = get_cvr_handler()
 
         self.filters = [getattr(self.__class__, fun)
                         for fun in dir(self.__class__)
                         if callable(getattr(self.__class__, fun))
                         and fun.startswith('filter_')]
-        self.cvr_appenders = [getattr(self.__class__, fun)
-                              for fun in dir(self.__class__)
-                              if callable(getattr(self.__class__, fun))
-                              and fun.startswith('append_cvr')]
-        self.smiley_appenders = [getattr(self.__class__, fun)
-                                 for fun in dir(self.__class__)
-                                 if callable(getattr(self.__class__, fun))
-                                 and fun.startswith('append_smiley')]
 
     def collect(self):
         """
@@ -72,11 +58,13 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'w') as f:
             f.write(json.dumps(res, indent=4, sort_keys=True))
 
-    def convert_to_int(self, data: dict, *keys):
+    @staticmethod
+    def convert_to_int(data: dict, *keys):
         for k in keys:
             data[k] = int(data[k]) if data[k] is not None else None
 
-    def convert_to_float(self, data: dict, *keys):
+    @staticmethod
+    def convert_to_float(data: dict, *keys):
         for k in keys:
             data[k] = float(data[k]) if data[k] is not None else None
 
@@ -100,7 +88,7 @@ class BaseDataHandler:
             Includes only production units
             Applies filters and appends from DataHandler
         """
-        out_path = f'smiley_json_processed.json'
+        out_path = 'smiley_json_processed.json'
 
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
@@ -109,80 +97,69 @@ class BaseDataHandler:
 
         prev_processed = PrevProcessedFile('processed_pnrs.csv')
 
-        sample_size = self._sample_size if self._sample_size else len(d)
+        res = temp_file.get_all()
+        total_rows = len(d)
         row_index = 0
 
         for restaurant in d:
-            if not temp_file.contains(restaurant['pnr']) and self.valid_production_unit(restaurant):
-                row_index += 1
-                row_rem = sample_size - row_index
-                if prev_processed.should_process_restaurant(restaurant['pnr'], restaurant['seneste_kontrol_dato']):
+            # we use this to avoid using the same fallback in three separate if statements
+            row_kept = False
 
+            # if sample size CLI arg is supplied, stop when its reached
+            if self._sample_size and len(res) >= self._sample_size:
+                break
+
+            # first check if the restaurant is valid
+            if self.valid_production_unit(restaurant):
+
+                # then ensure it hasn't already been processed prior to a crash, and
+                # that it should be processed at all cf. previously processed restaurants
+                if not temp_file.contains(restaurant['pnr']) \
+                        and prev_processed.should_process_restaurant(restaurant):
+
+                    # only sleep if --no-scrape is not passed, and if our cvr provider requests it.
+                    if not self._skip_scrape and self.cvr_handler.SHOULD_SLEEP and row_index > 0:
+                        time.sleep(self.cvr_handler.CRAWL_DELAY)
+
+                    # only collect data if we haven't passed --no-scrape
                     processed = restaurant if self._skip_scrape \
-                        else self._append_additional_data(restaurant)
-                    temp_file.add_data(processed)
+                        else self.cvr_handler.collect_data(restaurant)
 
-                    if row_rem != 0 and not self._skip_scrape:
-                        time.sleep(self.CRAWL_DELAY)
+                    # check filters to see if we should keep the row
+                    if self._should_keep(processed):
+                        res.append(processed)
+                        temp_file.add_data(processed)
+                        row_kept = True
 
-                print(f'{row_rem} rows to go')
+            # if any check resulted in a row skip, decrement the total row count
+            # for terminal output purposes
+            if not row_kept:
+                total_rows -= 1
 
-                if row_rem == 0:
-                    break
+            if self._sample_size:
+                print(f'Collected {len(res)} of {self._sample_size} samples')
             else:
-                row_index += 1
+                print(f'{total_rows - len(res)} rows to go')
 
-        filtered = self._filter_data(temp_file.get_all())
+            row_index += 1
 
-        prev_processed.output_processed_companies(filtered)
+        prev_processed.output_processed_companies(res)
         temp_file.close()
 
-        filtered = self._rename_keys(filtered)
+        res = self._rename_keys(res)
 
         with open(out_path, 'w') as f:
-            f.write(json.dumps(filtered, indent=4))
+            f.write(json.dumps(res, indent=4))
 
     def valid_production_unit(self, restaurant: dict) -> bool:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
 
-    def _filter_data(self, data: list) -> list:
+    def _should_keep(self, data: dict) -> bool:
         """
-        Apply filters
+        Apply filters to see if row should be kept in result
         """
-        for _filter in self.filters:
-            data = _filter(data)
-
-        return data
-
-    def _append_additional_data(self, data: dict) -> dict:
-        """
-        run append methods on the data
-        """
-
-        print('-' * 40)
-        print(f'{data["navn1"]} | {data["pnr"]}')
-        params = {
-            'enhedstype': 'produktionsenhed',
-            'id': data['pnr'],
-            'language': 'da',
-            'soeg': data['pnr'],
-        }
-
-        print(f'{self.CRAWL_CVR_URL} | {params}')
-        res = get(self.CRAWL_CVR_URL, params=params)
-        soup = BeautifulSoup(res.content.decode('utf-8'), 'html.parser')
-
-        for appender in self.cvr_appenders:
-            data = appender(soup, data)
-
-        smiley = get(data['URL'])
-        smiley_soup = BeautifulSoup(
-            smiley.content.decode('utf-8'), 'html.parser')
-
-        for appender in self.smiley_appenders:
-            data = appender(smiley_soup, data)
-
-        return data
+        res = [_filter(data) for _filter in self.filters]
+        return all(res)
 
     @ staticmethod
     def _has_cvr(row: dict):
@@ -226,10 +203,8 @@ class BaseDataHandler:
 
 class DataHandler(BaseDataHandler):
     """
-    Define appenders and filters here.
+    Define filters here.
 
-    Appenders should be prefixed by 'append_' and should have params 'soup' and 'row'
-        It is assumed that every appender works on an HTML soup from datacvr.virk.dk
     Filters should be prefixed by 'filter_' and should have param 'data'
     """
 
@@ -237,125 +212,30 @@ class DataHandler(BaseDataHandler):
         super().__init__(*args, **kwargs)
 
     @ staticmethod
-    def append_cvr_industry_code(soup, row):
-        """
-        Appends industry code and text from datacvr.virk.dk to a row
-        """
-        industry_elem = soup.find(
-            'div', attrs={'class': 'Help-stamdata-data-branchekode'})
-        if industry_elem:
-            industry_elem = industry_elem.parent.parent.parent
-            industry = list(industry_elem.children)[3].text.strip()
-            row['industry_code'] = industry.split()[0]
-            row['industry_text'] = industry.replace(
-                row['industry_code'], '').strip()
-            print(f'code: {row["industry_code"]}: {row["industry_text"]}')
-        else:
-            row['industry_code'] = row['industry_text'] = None
-        return row
-
-    @staticmethod
-    def append_cvr_start_date(soup, row):
-        """
-        Appends start date from datacvr.virk.dk to a row
-        """
-        start_date_elem = soup.find(
-            'div', attrs={'class': 'Help-stamdata-data-startdato'})
-        if start_date_elem:
-            start_date_elem = start_date_elem.parent.parent.parent
-            date = datetime.strptime(
-                list(start_date_elem.children)[3].text.strip(),
-                '%d.%m.%Y'
-            )
-            row['start_date'] = date.strftime(ISO8601_FMT)
-            print(f'date: {row["start_date"]}')
-        else:
-            row['industry_code'] = row['industry_text'] = None
-
-        del row['branche']
-        del row['brancheKode']
-
-        return row
-
-    @staticmethod
-    def append_smiley_reports(soup, row):
-        tags = soup.findAll('a', attrs={'target': '_blank'})
-        keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
-                'fjerdeseneste_kontrol']
-        reports = []
-
-        # we assume that pdfs will continue to appear in descending order
-        # if we want safe guarding against changes in order we can use
-        # date = t.find('p', attrs={'class': 'DateText'}).text
-        # and check the date against the fields of param: row
-        for tag, key in zip(tags, keys):
-            if row[key]:
-                url = tag.attrs['href']
-                date = datetime.strptime(
-                    row[f'{key}_dato'],
-                    '%d-%m-%Y %H:%M:%S'
-                )
-
-                d = {
-                    'report_id': url.split('?')[1],
-                    'smiley': row[key],
-                    'date': date.strftime(ISO8601_FMT)
-                }
-
-                reports.append(d)
-
-                del row[key]
-                del row[f'{key}_dato']
-
-        row['smiley_reports'] = reports
-
-        return row
-
-    @ staticmethod
-    def _filter_industry_codes(data):
+    def filter_industry_codes(data: dict):
         """
         Filters all companies that do not have a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        return [item
-                for item in data
-                if 'industry_code' in item.keys()
-                and item['industry_code'] in include_codes]
+        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        print(f'valid industry code: {res}')
+        return res
 
     @ staticmethod
-    def filter_null_control(data):
+    def filter_null_control(data: dict):
         """
         Filters all companies that have not yet received a smiley control visit.
         """
-        return [item
-                for item in data
-                if 'seneste_kontrol' in item.keys()
-                and item['seneste_kontrol'] is not None]
+        res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
+        print(f'control not null: {res}')
+        return res
 
     @ staticmethod
-    def filter_null_coordinates(data):
+    def filter_null_coordinates(data: dict):
         """
         Filters all companies without a longitude or latitude.
         """
-        return [item
-                for item in data
-                if item['Geo_Lat'] is not None and item['Geo_Lng'] is not None]
-
-    @ staticmethod
-    def _filter_dead_companies(data):
-        """
-        Excluded for now. Remove leading underscore to include.
-
-        Filters all companies that are presumed dead - i.e., has not received a smiley control visit
-        within the last year.
-        """
-        res = []
-        for item in data:
-            last_control = datetime.strptime(
-                item['seneste_kontrol_dato'], '%d-%m-%Y %H:%M:%S')
-            now = datetime.now()
-            diff = now - last_control
-
-            if diff.days < 365:
-                res.append(item)
+        res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
+              and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
+        print(f'coords not null: {res}')
         return res
