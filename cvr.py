@@ -86,8 +86,11 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
             'country': 'dk',
             'token': FilterXMLConfig.cvrapi_api_key()
         }
+        headers = {
+            'User-Agent': 'sw814f21 - FindSmiley app - Jonas Andersen'
+        }
 
-        res = get(self.URL, params=params)
+        res = get(self.URL, params=params, headers=headers)
         content = json.loads(res.content.decode('utf-8'))
 
         if content:
