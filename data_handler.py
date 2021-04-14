@@ -107,7 +107,7 @@ class BaseDataHandler:
 
         temp_file = TempFile(d[0])
 
-        prev_processed = PrevProcessedFile()
+        prev_processed = PrevProcessedFile('processed_pnrs.csv')
 
         sample_size = self._sample_size if self._sample_size else len(d)
         row_index = 0
