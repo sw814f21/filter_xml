@@ -21,6 +21,7 @@ class BaseDataHandler:
     def __init__(self, *args, **kwargs):
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
+        self._outputter = kwargs.pop('outputter')
 
         self.cvr_handler = get_cvr_handler()
 
@@ -88,8 +89,6 @@ class BaseDataHandler:
             Includes only production units
             Applies filters and appends from DataHandler
         """
-        out_path = 'smiley_json_processed.json'
-
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
@@ -148,8 +147,7 @@ class BaseDataHandler:
 
         res = self._rename_keys(res)
 
-        with open(out_path, 'w') as f:
-            f.write(json.dumps(res, indent=4))
+        self._outputter.write(res)
 
     def valid_production_unit(self, restaurant: dict) -> bool:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
