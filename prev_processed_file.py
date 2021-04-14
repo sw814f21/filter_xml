@@ -3,16 +3,15 @@ from datetime import datetime
 
 
 class PrevProcessedFile:
-    FILE_NAME = "processed_pnrs.csv"
-
-    def __init__(self) -> None:
+    def __init__(self, file_path) -> None:
+        self.file_path = file_path
         self.__processed_restaurants = self.__input_processed_companies()
 
     def get_by_pnr(self, pnr: str) -> dict:
         return self.__processed_restaurants.get(pnr)
 
     def output_processed_companies(self, restaurants: list):
-        with open(self.FILE_NAME, 'w+') as f:
+        with open(self.file_path, 'w+') as f:
             fieldnames = ['pnr', 'seneste_kontrol_dato']
             writer = csv.DictWriter(
                 f, fieldnames=fieldnames, extrasaction='ignore')
@@ -49,7 +48,7 @@ class PrevProcessedFile:
 
     def __input_processed_companies(self) -> dict:
         try:
-            with open(self.FILE_NAME, 'r') as f:
+            with open(self.file_path, 'r') as f:
                 reader = csv.DictReader(f)
                 out = dict()
                 for entry in reader:

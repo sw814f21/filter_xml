@@ -25,6 +25,8 @@ class BaseDataHandler:
 
         self.cvr_handler = get_cvr_handler()
 
+        self.cvr_handler = get_cvr_handler()
+
         self.filters = [getattr(self.__class__, fun)
                         for fun in dir(self.__class__)
                         if callable(getattr(self.__class__, fun))
@@ -94,7 +96,7 @@ class BaseDataHandler:
 
         temp_file = TempFile(d[0])
 
-        prev_processed = PrevProcessedFile()
+        prev_processed = PrevProcessedFile('processed_pnrs.csv')
 
         res = temp_file.get_all()
         total_rows = len(d)
@@ -105,7 +107,7 @@ class BaseDataHandler:
             row_kept = False
 
             # if sample size CLI arg is supplied, stop when its reached
-            if self._sample_size and len(res) == self._sample_size:
+            if self._sample_size and len(res) >= self._sample_size:
                 break
 
             # first check if the restaurant is valid
