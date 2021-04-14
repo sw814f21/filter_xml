@@ -106,7 +106,7 @@ class BaseDataHandler:
             row_kept = False
 
             # if sample size CLI arg is supplied, stop when its reached
-            if self._sample_size and len(res) == self._sample_size:
+            if self._sample_size and len(res) >= self._sample_size:
                 break
 
             # first check if the restaurant is valid
