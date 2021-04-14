@@ -52,6 +52,131 @@ Takes one parameter, `SIZE`, as an `int`. How many rows to process. Defaults to 
 #### --no-scrape, -ns
 Takes no parameters. Skips scraping. Defaults to `False`, i.e. do scrape.
 
+
+## Data structure
+
+### Fresh XML download
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<document>
+    <row>
+        <navnelbnr>81615</navnelbnr>
+        <cvrnr>27539629</cvrnr>
+        <pnr>1010232313</pnr>
+        <region />
+        <brancheKode>DD.56.10.99</brancheKode>
+        <branche>Serveringsvirksomhed - Restauranter m.v.</branche>
+        <virksomhedstype>Detail</virksomhedstype>
+        <navn1>Pizza Chianti </navn1>
+        <adresse1>Odensevej 82  A</adresse1>
+        <postnr>5260</postnr>
+        <By>Odense S</By>
+        <seneste_kontrol>1</seneste_kontrol>
+        <seneste_kontrol_dato>25-02-2021 00:00:00</seneste_kontrol_dato>
+        <naestseneste_kontrol>1</naestseneste_kontrol>
+        <naestseneste_kontrol_dato>23-09-2020 00:00:00</naestseneste_kontrol_dato>
+        <tredjeseneste_kontrol>2</tredjeseneste_kontrol>
+        <tredjeseneste_kontrol_dato>19-08-2020 00:00:00</tredjeseneste_kontrol_dato>
+        <fjerdeseneste_kontrol>1</fjerdeseneste_kontrol>
+        <fjerdeseneste_kontrol_dato>13-11-2019 00:00:00</fjerdeseneste_kontrol_dato>
+        <URL>http://www.findsmiley.dk/da-DK/Searching/DetailsView.htm?virk=81615</URL>
+        <reklame_beskyttelse>0</reklame_beskyttelse>
+        <Elite_Smiley>0</Elite_Smiley>
+        <Kaedenavn />
+        <Geo_Lng>10.391894</Geo_Lng>
+        <Geo_Lat>55.366916</Geo_Lat>
+        <Pixibranche>Restauranter, pizzeriaer, kantiner m.m.</Pixibranche>
+    </row>
+    ...
+</document>
+```
+
+### After JSON conversion, before further processing
+```json
+[
+    {
+        "By": "Odense S",
+        "Elite_Smiley": "0",
+        "Geo_Lat": 55.366916,
+        "Geo_Lng": 10.391894,
+        "Kaedenavn": null,
+        "Pixibranche": "Restauranter, pizzeriaer, kantiner m.m.",
+        "URL": "http://www.findsmiley.dk/da-DK/Searching/DetailsView.htm?virk=81615",
+        "adresse1": "Odensevej 82  A",
+        "branche": "Serveringsvirksomhed - Restauranter m.v.",
+        "brancheKode": "DD.56.10.99",
+        "cvrnr": "27539629",
+        "fjerdeseneste_kontrol": 1,
+        "fjerdeseneste_kontrol_dato": "13-11-2019 00:00:00",
+        "naestseneste_kontrol": 1,
+        "naestseneste_kontrol_dato": "23-09-2020 00:00:00",
+        "navn1": "Pizza Chianti",
+        "navnelbnr": "81615",
+        "pnr": "1010232313",
+        "postnr": "5260",
+        "region": null,
+        "reklame_beskyttelse": "0",
+        "seneste_kontrol": 1,
+        "seneste_kontrol_dato": "25-02-2021 00:00:00",
+        "tredjeseneste_kontrol": 2,
+        "tredjeseneste_kontrol_dato": "19-08-2020 00:00:00",
+        "virksomhedstype": "Detail"
+    },
+    ...
+]
+```
+
+### Final output
+```json
+[
+    {
+        "cvrnr": "27539629",
+        "pnr": "1010232313",
+        "region": null,
+        "industry_code": "561010",
+        "industry_text": "Restauranter",
+        "start_date": "2003-12-01T00:00:00Z",
+        "smiley_reports": [
+            {
+                "report_id": "Virk1864537",
+                "smiley": 1,
+                "date": "2021-02-25T00:00:00Z"
+            },
+            {
+                "report_id": "Virk1811639",
+                "smiley": 1,
+                "date": "2020-09-23T00:00:00Z"
+            },
+            {
+                "report_id": "Virk1794678",
+                "smiley": 2,
+                "date": "2020-08-19T00:00:00Z"
+            },
+            {
+                "report_id": "Virk1697390",
+                "smiley": 1,
+                "date": "2019-11-13T00:00:00Z"
+            }
+        ],
+        "city": "Odense S",
+        "elite_smiley": "0",
+        "geo_lat": 55.366916,
+        "geo_lng": 10.391894,
+        "franchise_name": null,
+        "niche_industry": "Restauranter, pizzeriaer, kantiner m.m.",
+        "url": "http://www.findsmiley.dk/da-DK/Searching/DetailsView.htm?virk=81615",
+        "address": "Odensevej 82  A",
+        "name": "Pizza Chianti",
+        "name_seq_nr": "81615",
+        "zip_code": "5260",
+        "ad_protection": "0",
+        "company_type": "Detail"
+    },
+    ...
+]
+```
+
+
 ## Notes
 
 Only companies with a p-number is included.
