@@ -16,7 +16,7 @@ class PrevProcessedFile:
         self.file_path = file_path
         self.__processed_restaurants = self.__input_processed_companies()
 
-    def get_control_date_by_seq_nr(self, seq_nr: str) -> dict:
+    def get_control_date_by_seq_nr(self, seq_nr: str) -> str:
         """
         Retrieve the latest control date in the previous processed file, indexed by sequence number
         """
