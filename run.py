@@ -7,12 +7,14 @@ arg_parser.add_argument('--sample', '-s', nargs='?', metavar='SIZE', type=int, d
                         help='sample size, default: 0 (full run)')
 arg_parser.add_argument('--no-scrape', '-ns', action='store_true',
                         help='skip scraping during run')
-
+arg_parser.add_argument('--push', '-p', action='store_true', 
+                        help='push output to rust server')
 args = arg_parser.parse_args()
 
 if __name__ == '__main__':
     dh = DataHandler(
         sample=args.sample,
-        no_scrape=args.no_scrape
+        no_scrape=args.no_scrape,
+        push=args.push
     )
     dh.collect()

@@ -7,6 +7,7 @@ from xml.etree import ElementTree as ET
 from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
 from cvr import get_cvr_handler
+from data_outputter import get_outputter
 
 
 class BaseDataHandler:
@@ -22,6 +23,7 @@ class BaseDataHandler:
     def __init__(self, *args, **kwargs):
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
+        self._outputter = get_outputter(kwargs.pop('push', False))
 
         self.cvr_handler = get_cvr_handler()
 
@@ -109,8 +111,6 @@ class BaseDataHandler:
 
         Once data has been processed, keys are renamed. Cf. the translation map in _rename_keys()
         """
-        out_path = 'smiley_json_processed.json'
-
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
@@ -169,8 +169,7 @@ class BaseDataHandler:
 
         res = self._rename_keys(res)
 
-        with open(out_path, 'w') as f:
-            f.write(json.dumps(res, indent=4))
+        self._outputter.write(res)
 
     def valid_production_unit(self, restaurant: dict) -> bool:
         """
