@@ -2,6 +2,9 @@ import json
 import requests
 
 class BaseDataOutputter:
+    """
+        An abstract class that is used to define different output strategies
+    """
 
     def write(self, data_to_write: dict) -> None:
         """
