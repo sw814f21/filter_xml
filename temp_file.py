@@ -3,6 +3,14 @@ import csv
 
 
 class TempFile:
+    """
+    Handler for temp.csv file.
+
+    This file is maintained during a session, and is deleted once the session ends. This file
+    ensures that we have saved progress in the case of a crash, meaning that this file is in
+    charge of maintaining the state of the data collection at any given time. A session does not
+    end until every row has been processed.
+    """
     FILE_NAME = "temp.csv"
 
     def __init__(self, data_example: dict) -> None:
@@ -13,12 +21,15 @@ class TempFile:
         self.__file = open(self.FILE_NAME, read_append)
         self.__file_writer = self.__get_file_writer(data_example)
 
-        if(file_exists):
+        if file_exists:
             self.__data = self.__read_temp_data()
         else:
             self.__file_writer.writeheader()
 
-    def __get_file_writer(self, data_example: dict):
+    def __get_file_writer(self, data_example: dict) -> csv.DictWriter:
+        """
+        Construct file writer
+        """
         fieldnames = list(data_example.keys())
 
         if 'pnr' not in fieldnames:
@@ -30,6 +41,9 @@ class TempFile:
             self.__file, fieldnames=fieldnames, extrasaction='ignore')
 
     def __read_temp_data(self) -> dict:
+        """
+        Read temp file as a dictionary, indexed by p-number
+        """
         reader = csv.DictReader(self.__file)
         out = dict()
         for entry in reader:
@@ -37,6 +51,9 @@ class TempFile:
         return out
 
     def add_data(self, data: dict):
+        """
+        Write a single row to temp file and commit
+        """
         if 'pnr' not in data:
             self.close()
             raise ValueError('Expected data to have "pnr" key')
@@ -45,12 +62,21 @@ class TempFile:
         self.__file_writer.writerow(data)
         self.__file.flush()
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Finish the current session by closing and deleting the file
+        """
         self.__file.close()
         os.remove(self.FILE_NAME)
 
     def contains(self, pnr: str) -> bool:
+        """
+        Check if file contains a restaurant, searching by p-number
+        """
         return bool(self.__data.get(pnr))
 
     def get_all(self) -> list:
+        """
+        Retrieve all restaurants in file as a list
+        """
         return list(self.__data.values())
