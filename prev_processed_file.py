@@ -16,18 +16,18 @@ class PrevProcessedFile:
         self.file_path = file_path
         self.__processed_restaurants = self.__input_processed_companies()
 
-    def get_control_date_by_pnr(self, pnr: str) -> dict:
+    def get_control_date_by_seq_nr(self, seq_nr: str) -> dict:
         """
-        Retrieve the latest control date in the previous processed file, indexed by p-number
+        Retrieve the latest control date in the previous processed file, indexed by sequence number
         """
-        return self.__processed_restaurants.get(pnr)
+        return self.__processed_restaurants.get(seq_nr)
 
     def output_processed_companies(self, restaurants: list) -> None:
         """
         Write list of restaurant dicts to file processed_pnrs.csv
         """
         with open(self.file_path, 'w+') as f:
-            fieldnames = ['pnr', 'seneste_kontrol_dato']
+            fieldnames = ['navnelbnr', 'seneste_kontrol_dato']
             writer = csv.DictWriter(
                 f, fieldnames=fieldnames, extrasaction='ignore')
 
@@ -36,9 +36,9 @@ class PrevProcessedFile:
             for restaurant in restaurants:
                 writer.writerow(restaurant)
 
-            for pnr, control_date in self.__processed_restaurants.items():
+            for seq_nr, control_date in self.__processed_restaurants.items():
                 writer.writerow(
-                    {'pnr': pnr, 'seneste_kontrol_dato': control_date})
+                    {'navnelbnr': seq_nr, 'seneste_kontrol_dato': control_date})
 
     def should_process_restaurant(self, restaurant: dict) -> bool:
         """
@@ -47,13 +47,14 @@ class PrevProcessedFile:
             the restaurant does not exist in the file, or
             the restaurant has received a new check up since last time it was processed
         """
-        pnr = restaurant['pnr']
+        seq_nr = restaurant['navnelbnr']
         control_date = restaurant['seneste_kontrol_dato']
-        prev_processed_restaurant_date = self.get_control_date_by_pnr(pnr)
+        prev_processed_restaurant_date = self.get_control_date_by_seq_nr(
+            seq_nr)
         if prev_processed_restaurant_date:
             if self.__is_control_newer(control_date,
                                        prev_processed_restaurant_date):
-                self.__delete(pnr)
+                self.__delete(seq_nr)
                 return True
             else:
                 return False
@@ -69,11 +70,11 @@ class PrevProcessedFile:
         previous_date = datetime.strptime(previous_date_str, date_format)
         return new_date > previous_date
 
-    def __delete(self, pnr: str) -> None:
+    def __delete(self, seq_nr: str) -> None:
         """
-        Delete a single restaurant, indexed by p-number.
+        Delete a single restaurant, indexed by sequence number.
         """
-        del self.__processed_restaurants[pnr]
+        del self.__processed_restaurants[seq_nr]
 
     def __input_processed_companies(self) -> dict:
         """
@@ -84,7 +85,7 @@ class PrevProcessedFile:
                 reader = csv.DictReader(f)
                 out = dict()
                 for entry in reader:
-                    out[entry['pnr']] = entry['seneste_kontrol_dato']
+                    out[entry['navnelbnr']] = entry['seneste_kontrol_dato']
                 return out
         except FileNotFoundError:
             return {}
