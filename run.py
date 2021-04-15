@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from data_outputter import get_outputter
 
 from data_handler import DataHandler
 
@@ -16,6 +15,6 @@ if __name__ == '__main__':
     dh = DataHandler(
         sample=args.sample,
         no_scrape=args.no_scrape,
-        outputter=get_outputter(args.push)
+        push=args.push
     )
     dh.collect()

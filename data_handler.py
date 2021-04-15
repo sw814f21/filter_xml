@@ -7,6 +7,7 @@ from xml.etree import ElementTree as ET
 from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
 from cvr import get_cvr_handler
+from data_outputter import get_outputter
 
 
 class BaseDataHandler:
@@ -22,9 +23,7 @@ class BaseDataHandler:
     def __init__(self, *args, **kwargs):
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
-        self._outputter = kwargs.pop('outputter')
-
-        self.cvr_handler = get_cvr_handler()
+        self._outputter = get_outputter(kwargs.pop('push', False))
 
         self.cvr_handler = get_cvr_handler()
 
