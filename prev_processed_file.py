@@ -5,7 +5,7 @@ from datetime import datetime
 
 class PrevProcessedFile:
     """
-    Handler for processed_pnrs.csv file.
+    Handler for processed_companies.csv file.
 
     In this file every restaurant that has been previously processed is maintained. That is,
     every restaurant for which we have already collected external CVR data. The file is updated
@@ -24,7 +24,7 @@ class PrevProcessedFile:
 
     def output_processed_companies(self, restaurants: list) -> None:
         """
-        Write list of restaurant dicts to file processed_pnrs.csv
+        Write list of restaurant dicts to file processed_companies.csv
         """
         with open(self.file_path, 'w+') as f:
             fieldnames = ['navnelbnr', 'seneste_kontrol_dato']

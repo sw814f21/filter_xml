@@ -101,7 +101,7 @@ class BaseDataHandler:
             Collects additional, external data through CVRHandler
 
         Restaurants that have already been processed (i.e., external data has been collected) are
-        stored in processed_pnrs.csv - handled by PrevProcessedFile.
+        stored in processed_companies.csv - handled by PrevProcessedFile.
 
         Restaurants that have been processed during the current session are stored in
         temp.csv - handled by TempFile. This is done to save progress in the case of a crash
@@ -116,7 +116,7 @@ class BaseDataHandler:
 
         temp_file = TempFile(d[0])
 
-        prev_processed = PrevProcessedFile('processed_pnrs.csv')
+        prev_processed = PrevProcessedFile('processed_companies.csv')
 
         res = temp_file.get_all()
         total_rows = len(d)
@@ -246,7 +246,8 @@ class DataHandler(BaseDataHandler):
         Checks if row 'data' has a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        res = 'industry_code' in data.keys(
+        ) and data['industry_code'] in include_codes
         print(f'valid industry code: {res}')
         return res
 
@@ -255,7 +256,8 @@ class DataHandler(BaseDataHandler):
         """
         Checks if row 'data' has received at least 1 control check.
         """
-        res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
+        res = 'smiley_reports' in data.keys() and len(
+            data['smiley_reports']) > 0
         print(f'control not null: {res}')
         return res
 
