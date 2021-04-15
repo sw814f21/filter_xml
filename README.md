@@ -53,6 +53,8 @@ Takes one parameter, `SIZE`, as an `int`. How many rows to process. Defaults to 
 #### --no-scrape, -ns
 Takes no parameters. Skips scraping. Defaults to `False`, i.e. do scrape.
 
+#### --push, -p
+Takes no parameters. Save changes to database. Defaults to `False`, i.e. saves to json file.
 
 ## Data structure
 
