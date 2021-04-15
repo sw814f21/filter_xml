@@ -16,9 +16,9 @@ class PrevProcessedFile:
         self.file_path = file_path
         self.__processed_restaurants = self.__input_processed_companies()
 
-    def get_by_pnr(self, pnr: str) -> dict:
+    def get_control_date_by_pnr(self, pnr: str) -> str:
         """
-        Retrieve a single restaurant from file, indexed by p-number
+        Retrieve the latest control date in the previous processed file, indexed by p-number
         """
         return self.__processed_restaurants.get(pnr)
 
@@ -49,10 +49,10 @@ class PrevProcessedFile:
         """
         pnr = restaurant['pnr']
         control_date = restaurant['seneste_kontrol_dato']
-        prev_processed_restaurant = self.get_by_pnr(pnr)
-        if prev_processed_restaurant:
+        prev_processed_restaurant_date = self.get_control_date_by_pnr(pnr)
+        if prev_processed_restaurant_date:
             if self.__is_control_newer(control_date,
-                                       prev_processed_restaurant['seneste_kontrol_dato']):
+                                       prev_processed_restaurant_date):
                 self.__delete(pnr)
                 return True
             else:
