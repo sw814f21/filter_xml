@@ -16,14 +16,14 @@ class PrevProcessedFileTest(unittest.TestCase):
         if os.path.exists(FILENAME):
             os.remove(FILENAME)
 
-    def test_get_by_pnr_returns_correct_date(self):
+    def test_get_control_date_by_pnr_returns_correct_date(self):
         pnr = '123'
         date = '01-01-2001 00:00:00'
         self.create_file_with_data(pnr, date)
 
         processed_file = PrevProcessedFile(FILENAME)
 
-        self.assertEqual(processed_file.get_by_pnr(pnr), date)
+        self.assertEqual(processed_file.get_control_date_by_pnr(pnr), date)
 
     def test_should_not_process_restaurant_with_no_changes(self):
         pnr = '123'
@@ -31,7 +31,8 @@ class PrevProcessedFileTest(unittest.TestCase):
         self.create_file_with_data(pnr, date)
 
         processed_file = PrevProcessedFile(FILENAME)
-        should_process = processed_file.should_process_restaurant(pnr, date)
+        should_process = processed_file.should_process_restaurant(
+            {'pnr': pnr, 'seneste_kontrol_dato': date})
 
         self.assertFalse(should_process)
 
@@ -39,8 +40,8 @@ class PrevProcessedFileTest(unittest.TestCase):
         self.create_file_with_data()
 
         processed_file = PrevProcessedFile(FILENAME)
-        should_process = processed_file.should_process_restaurant(
-            '555', '01-01-2001 00:00:00')
+        should_process = processed_file.should_process_restaurant({
+            'pnr': '555', 'seneste_kontrol_dato': '01-01-2001 00:00:00'})
 
         self.assertTrue(should_process)
 
@@ -49,8 +50,8 @@ class PrevProcessedFileTest(unittest.TestCase):
         self.create_file_with_data(pnr, '01-01-2001 00:00:00')
 
         processed_file = PrevProcessedFile(FILENAME)
-        should_process = processed_file.should_process_restaurant(
-            pnr, '01-02-2001 00:00:00')
+        should_process = processed_file.should_process_restaurant({
+            'pnr': pnr, 'seneste_kontrol_dato': '01-02-2001 00:00:00'})
 
         self.assertTrue(should_process)
 
@@ -58,14 +59,27 @@ class PrevProcessedFileTest(unittest.TestCase):
         pnr = '123'
         new_date = '01-02-2001 00:00:00'
         self.create_file_with_data(pnr, '01-01-2001 00:00:00')
+        new_restaurant = {'pnr': pnr, 'seneste_kontrol_dato': new_date}
 
         processed_file = PrevProcessedFile(FILENAME)
-        processed_file.should_process_restaurant(
-            pnr, new_date)
+        processed_file.should_process_restaurant(new_restaurant)
+        processed_file.output_processed_companies([new_restaurant])
+        processed_file = PrevProcessedFile(FILENAME)
+
+        self.assertEqual(processed_file.get_control_date_by_pnr(pnr), new_date)
+
+    def test_old_entry_is_deleted_when_new_control_date(self):
+        pnr = '123'
+        new_date = '01-02-2001 00:00:00'
+        self.create_file_with_data(pnr, '01-01-2001 00:00:00')
+        new_restaurant = {'pnr': pnr, 'seneste_kontrol_dato': new_date}
+
+        processed_file = PrevProcessedFile(FILENAME)
+        processed_file.should_process_restaurant(new_restaurant)
         processed_file.output_processed_companies([])
         processed_file = PrevProcessedFile(FILENAME)
 
-        self.assertEqual(processed_file.get_by_pnr(pnr), new_date)
+        self.assertEqual(processed_file.get_control_date_by_pnr(pnr), None)
 
     def create_file_with_data(self, pnr='123', date='01-01-2001 00:00:00'):
         restaurant1 = {'pnr': '11111',
