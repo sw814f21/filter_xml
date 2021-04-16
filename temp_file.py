@@ -32,10 +32,10 @@ class TempFile:
         """
         fieldnames = list(data_example.keys())
 
-        if 'pnr' not in fieldnames:
+        if 'navnelbnr' not in fieldnames:
             self.close()
             raise ValueError(
-                'Expected pnr field to be provided in data example')
+                'Expected "navnelbnr" field to be provided in data example')
 
         return csv.DictWriter(
             self.__file, fieldnames=fieldnames, extrasaction='ignore')
@@ -47,18 +47,18 @@ class TempFile:
         reader = csv.DictReader(self.__file)
         out = dict()
         for entry in reader:
-            out[entry['pnr']] = entry
+            out[entry['navnelbnr']] = entry
         return out
 
     def add_data(self, data: dict):
         """
         Write a single row to temp file and commit
         """
-        if 'pnr' not in data:
+        if 'navnelbnr' not in data:
             self.close()
-            raise ValueError('Expected data to have "pnr" key')
+            raise ValueError('Expected data to have "navnelbnr" key')
 
-        self.__data[data['pnr']] = data
+        self.__data[data['navnelbnr']] = data
         self.__file_writer.writerow(data)
         self.__file.flush()
 
@@ -69,11 +69,11 @@ class TempFile:
         self.__file.close()
         os.remove(self.FILE_NAME)
 
-    def contains(self, pnr: str) -> bool:
+    def contains(self, seq_nr: str) -> bool:
         """
         Check if file contains a restaurant, searching by p-number
         """
-        return bool(self.__data.get(pnr))
+        return bool(self.__data.get(seq_nr))
 
     def get_all(self) -> list:
         """

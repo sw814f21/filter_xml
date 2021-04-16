@@ -103,7 +103,7 @@ class BaseDataHandler:
             Collects additional, external data through CVRHandler
 
         Restaurants that have already been processed (i.e., external data has been collected) are
-        stored in processed_pnrs.csv - handled by PrevProcessedFile.
+        stored in processed_companies.csv - handled by PrevProcessedFile.
 
         Restaurants that have been processed during the current session are stored in
         temp.csv - handled by TempFile. This is done to save progress in the case of a crash
@@ -116,7 +116,7 @@ class BaseDataHandler:
 
         temp_file = TempFile(d[0])
 
-        prev_processed = PrevProcessedFile('processed_pnrs.csv')
+        prev_processed = PrevProcessedFile('processed_companies.csv')
 
         res = temp_file.get_all()
         total_rows = len(d)
