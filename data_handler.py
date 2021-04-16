@@ -246,8 +246,7 @@ class DataHandler(BaseDataHandler):
         Checks if row 'data' has a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        res = 'industry_code' in data.keys(
-        ) and data['industry_code'] in include_codes
+        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
         print(f'valid industry code: {res}')
         return res
 
@@ -256,8 +255,7 @@ class DataHandler(BaseDataHandler):
         """
         Checks if row 'data' has received at least 1 control check.
         """
-        res = 'smiley_reports' in data.keys() and len(
-            data['smiley_reports']) > 0
+        res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
         print(f'control not null: {res}')
         return res
 
