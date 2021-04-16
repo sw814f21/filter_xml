@@ -1,6 +1,7 @@
 import csv
 
 from datetime import datetime
+from config import FilterXMLConfig
 
 
 class PrevProcessedFile:
@@ -27,18 +28,16 @@ class PrevProcessedFile:
         Write list of restaurant dicts to file processed_companies.csv
         """
         with open(self.file_path, 'w+') as f:
-            fieldnames = ['navnelbnr', 'seneste_kontrol_dato']
-            writer = csv.DictWriter(
-                f, fieldnames=fieldnames, extrasaction='ignore')
+            writer = csv.writer(f)
 
-            writer.writeheader()
-
+            # Write new processed restaurants to file
             for restaurant in restaurants:
-                writer.writerow(restaurant)
+                latest_control_date = restaurant['smiley_reports'][0]['date']
+                writer.writerow([restaurant['navnelbnr'], latest_control_date])
 
+            # Write the existing processed restaurants to file
             for seq_nr, control_date in self.__processed_restaurants.items():
-                writer.writerow(
-                    {'navnelbnr': seq_nr, 'seneste_kontrol_dato': control_date})
+                writer.writerow([seq_nr, control_date])
 
     def should_process_restaurant(self, restaurant: dict) -> bool:
         """
@@ -60,14 +59,13 @@ class PrevProcessedFile:
                 return False
         return True
 
-    @staticmethod
+    @ staticmethod
     def __is_control_newer(new_date_str: str, previous_date_str: str) -> bool:
         """
         Check if new_date is different from our stored date.
         """
-        date_format = '%d-%m-%Y %H:%M:%S'
-        new_date = datetime.strptime(new_date_str, date_format)
-        previous_date = datetime.strptime(previous_date_str, date_format)
+        new_date = datetime.strptime(new_date_str, '%d-%m-%Y %H:%M:%S')
+        previous_date = datetime.strptime(previous_date_str, FilterXMLConfig.iso_fmt())
         return new_date > previous_date
 
     def __delete(self, seq_nr: str) -> None:
@@ -82,10 +80,10 @@ class PrevProcessedFile:
         """
         try:
             with open(self.file_path, 'r') as f:
-                reader = csv.DictReader(f)
+                reader = csv.reader(f)
                 out = dict()
-                for entry in reader:
-                    out[entry['navnelbnr']] = entry['seneste_kontrol_dato']
+                for row in reader:
+                    out[row[0]] = row[1]
                 return out
         except FileNotFoundError:
             return {}
