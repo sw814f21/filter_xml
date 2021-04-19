@@ -1,3 +1,4 @@
+import json
 import os
 import csv
 
@@ -39,15 +40,16 @@ class TempFile:
                 'Expected "navnelbnr" field to be provided in data example')
 
         return csv.DictWriter(
-            self.__file, fieldnames=fieldnames, extrasaction='ignore')
+            self.__file, fieldnames=fieldnames, extrasaction='ignore', delimiter=";")
 
     def __read_temp_data(self) -> dict:
         """
         Read temp file as a dictionary, indexed by p-number
         """
-        reader = csv.DictReader(self.__file)
+        reader = csv.DictReader(self.__file, delimiter=";")
         out = dict()
         for entry in reader:
+            entry['smiley_reports'] = json.loads(entry['smiley_reports'])
             out[entry['navnelbnr']] = entry
         return out
 
@@ -59,8 +61,12 @@ class TempFile:
             self.close()
             raise ValueError('Expected data to have "navnelbnr" key')
 
+        dataCopy = data.copy()
+        dump = json.dumps(dataCopy['smiley_reports'])
+        dataCopy['smiley_reports'] = dump
+
         self.__data[data['navnelbnr']] = data
-        self.__file_writer.writerow(data)
+        self.__file_writer.writerow(dataCopy)
         self.__file.flush()
 
     def close(self) -> None:
