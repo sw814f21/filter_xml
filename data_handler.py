@@ -24,7 +24,7 @@ class BaseDataHandler:
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
         self._outputter = get_outputter(kwargs.pop('push', False))
-        self._file = kwargs.pop('file', '')
+        self._file = kwargs.pop('file', '')[0]
 
         self.smiley_file = self._file if self._file else self.SMILEY_XML
 
