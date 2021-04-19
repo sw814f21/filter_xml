@@ -64,7 +64,8 @@ class PrevProcessedFileTest(unittest.TestCase):
         processed_file = PrevProcessedFile(FILENAME)
         processed_file.should_process_restaurant(
             {'navnelbnr': seq_nr, 'seneste_kontrol_dato': '01-02-2001 00:00:00'})
-        processed_file.output_processed_companies([new_restaurant])
+        processed_file.add_list([new_restaurant])
+        processed_file.output_processed_companies()
         processed_file = PrevProcessedFile(FILENAME)
 
         self.assertEqual(
@@ -78,18 +79,18 @@ class PrevProcessedFileTest(unittest.TestCase):
 
         processed_file = PrevProcessedFile(FILENAME)
         processed_file.should_process_restaurant(new_restaurant)
-        processed_file.output_processed_companies([])
+        processed_file.output_processed_companies()
         processed_file = PrevProcessedFile(FILENAME)
 
         self.assertEqual(
             processed_file.get_control_date_by_seq_nr(seq_nr), None)
 
-    def test_output_called_with_restaurant_without_control_date(self):
+    def test_error_when_adding_restaurant_without_control_date(self):
         restaurant = {'navnelbnr': '1111'}
         processed_file = PrevProcessedFile(FILENAME)
 
         with self.assertRaises(KeyError):
-            processed_file.output_processed_companies([restaurant])
+            processed_file.add_list([restaurant])
 
     def create_file_with_data(self, seq_nr='123', date='2001-01-01T00:00:00Z'):
         restaurant1 = {'navnelbnr': '11111',
@@ -100,5 +101,5 @@ class PrevProcessedFileTest(unittest.TestCase):
                        'smiley_reports': [{'date': '2003-03-03T00:00:00Z'}]}
 
         processed_file = PrevProcessedFile(FILENAME)
-        processed_file.output_processed_companies(
-            [restaurant1, restaurant2, restaurant3])
+        processed_file.add_list([restaurant1, restaurant2, restaurant3])
+        processed_file.output_processed_companies()
