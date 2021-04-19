@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 
 from temp_file import TempFile
 from prev_processed_file import PrevProcessedFile
-from cvr import get_cvr_handler
+from cvr import get_cvr_handler, FindSmileyHandler
 from data_outputter import get_outputter
 
 
@@ -26,6 +26,7 @@ class BaseDataHandler:
         self._outputter = get_outputter(kwargs.pop('push', False))
 
         self.cvr_handler = get_cvr_handler()
+        self.smiley_handler = FindSmileyHandler()
 
         # collect all class methods prefixed by 'filter_'
         self.filters = [getattr(self.__class__, fun)
@@ -143,8 +144,11 @@ class BaseDataHandler:
                         time.sleep(self.cvr_handler.CRAWL_DELAY)
 
                     # only collect data if we haven't passed --no-scrape
-                    processed = restaurant if self._skip_scrape \
-                        else self.cvr_handler.collect_data(restaurant)
+                    if self._skip_scrape:
+                        processed = restaurant
+                    else:
+                        processed = self.cvr_handler.collect_data(restaurant)
+                        processed = self.smiley_handler.collect_data(processed)
 
                     # check filters to see if we should keep the row
                     if self._should_keep(processed):
