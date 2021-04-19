@@ -23,19 +23,28 @@ class PrevProcessedFile:
         """
         return self.__processed_restaurants.get(seq_nr)
 
-    def output_processed_companies(self, restaurants: list) -> None:
+    def add_list(self, restaurants: list) -> None:
         """
-        Write list of restaurant dicts to file processed_companies.csv
+        Add list of restaurants to list of processed comapnies to be written to file
+        """
+        for restaurant in restaurants:
+            self.add(restaurant)
+
+    def add(self, restaurant: dict) -> None:
+        """
+        Add restaurant to list of processed companies to be written to file
+        """
+        seq_nr = restaurant['navnelbnr']
+        control_date = restaurant['smiley_reports'][0]['date']
+        self.__processed_restaurants[seq_nr] = control_date
+
+    def output_processed_companies(self) -> None:
+        """
+        Write processed restaurants to file processed_companies.csv
         """
         with open(self.file_path, 'w+') as f:
             writer = csv.writer(f)
 
-            # Write new processed restaurants to file
-            for restaurant in restaurants:
-                latest_control_date = restaurant['smiley_reports'][0]['date']
-                writer.writerow([restaurant['navnelbnr'], latest_control_date])
-
-            # Write the existing processed restaurants to file
             for seq_nr, control_date in self.__processed_restaurants.items():
                 writer.writerow([seq_nr, control_date])
 
