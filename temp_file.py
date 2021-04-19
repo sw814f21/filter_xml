@@ -14,19 +14,24 @@ class TempFile:
     """
     FILE_NAME = "temp.csv"
 
-    def __init__(self, data_example: dict) -> None:
+    def __init__(self) -> None:
         file_exists = os.path.exists(self.FILE_NAME)
         read_append = 'r+' if file_exists else 'a+'
 
         self.__data = dict()
         self.__file = open(self.FILE_NAME, read_append)
-        self.__file_writer = self.__get_file_writer(data_example)
+        self.__file_writer = None
 
         if file_exists:
             self.__data = self.__read_temp_data()
-        else:
-            self.__file_writer.writeheader()
-            self.__file.flush()
+
+    def __create_file(self, data_example: dict) -> None:
+        """
+        Create temp file with headers from keys in provided data_example
+        """
+        self.__file_writer = self.__get_file_writer(data_example)
+        self.__file_writer.writeheader()
+        self.__file.flush()
 
     def __get_file_writer(self, data_example: dict) -> csv.DictWriter:
         """
@@ -60,6 +65,9 @@ class TempFile:
         if 'navnelbnr' not in data:
             self.close()
             raise ValueError('Expected data to have "navnelbnr" key')
+
+        if not self.__file_writer:
+            self.__create_file(data)
 
         dataCopy = data.copy()
         dump = json.dumps(dataCopy['smiley_reports'])

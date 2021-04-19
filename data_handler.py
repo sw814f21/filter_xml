@@ -114,7 +114,7 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        temp_file = TempFile(d[0])
+        temp_file = TempFile()
 
         prev_processed = PrevProcessedFile('processed_companies.csv')
 
