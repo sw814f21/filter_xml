@@ -13,7 +13,7 @@ class PrevProcessedFile:
     after every ended session.
     """
 
-    def __init__(self, file_path) -> None:
+    def __init__(self, file_path: str) -> None:
         self.file_path = file_path
         self.__processed_restaurants = self.__input_processed_companies()
 
