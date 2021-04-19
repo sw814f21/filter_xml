@@ -24,6 +24,9 @@ class BaseDataHandler:
         self._sample_size = kwargs.pop('sample', 0)
         self._skip_scrape = kwargs.pop('no_scrape', False)
         self._outputter = get_outputter(kwargs.pop('push', False))
+        self._file = kwargs.pop('file', '')
+
+        self.smiley_file = self._file if self._file else self.SMILEY_XML
 
         self.cvr_handler = get_cvr_handler()
 
@@ -44,9 +47,10 @@ class BaseDataHandler:
         """
         Create .json file from smiley XML data from Fødevarestyrelsen.
         """
-        self._retrieve_smiley_data()
+        if not self._file:
+            self._retrieve_smiley_data()
 
-        tree = ET.parse(self.SMILEY_XML)
+        tree = ET.parse(self.smiley_file)
         root = tree.getroot()
 
         res = []
