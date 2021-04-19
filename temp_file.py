@@ -25,6 +25,7 @@ class TempFile:
             self.__data = self.__read_temp_data()
         else:
             self.__file_writer.writeheader()
+            self.__file.flush()
 
     def __get_file_writer(self, data_example: dict) -> csv.DictWriter:
         """
