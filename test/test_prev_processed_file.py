@@ -1,4 +1,4 @@
-from prev_processed_file import PrevProcessedFile
+from src.prev_processed_file import PrevProcessedFile
 import unittest
 import os
 

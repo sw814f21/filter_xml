@@ -1,6 +1,6 @@
-from data_outputter import get_outputter
-from smiley_extractor import SmileyExtractor
-from data_processor import DataProcessor
+from src.data_outputter import get_outputter
+from src.smiley_extractor import SmileyExtractor
+from src.data_processor import DataProcessor
 
 
 class DataHandler:
@@ -15,5 +15,5 @@ class DataHandler:
             Main runner for collection
         """
 
-        SmileyExtractor.create_smiley_json()
+        # SmileyExtractor.create_smiley_json()
         self.dataProcessor.process_smiley_json(SmileyExtractor.SMILEY_JSON)

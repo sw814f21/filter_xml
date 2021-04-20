@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from temp_file import TempFile
+from src.temp_file import TempFile
 
 
 class TempFileTest(unittest.TestCase):

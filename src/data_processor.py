@@ -1,10 +1,10 @@
-from data_outputter import BaseDataOutputter
+from src.data_outputter import BaseDataOutputter
 import json
 import time
-from temp_file import TempFile
-from prev_processed_file import PrevProcessedFile
-from cvr import get_cvr_handler, FindSmileyHandler
-from filters import Filters
+from src.temp_file import TempFile
+from src.prev_processed_file import PrevProcessedFile
+from src.cvr import get_cvr_handler, FindSmileyHandler
+from src.filters import Filters
 
 
 class DataProcessor():
