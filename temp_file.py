@@ -62,8 +62,7 @@ class TempFile:
             raise ValueError('Expected data to have "navnelbnr" key')
 
         dataCopy = data.copy()
-        dump = json.dumps(dataCopy['smiley_reports'])
-        dataCopy['smiley_reports'] = dump
+        dataCopy['smiley_reports'] = json.dumps(dataCopy['smiley_reports'])
 
         self.__data[data['navnelbnr']] = data
         self.__file_writer.writerow(dataCopy)
