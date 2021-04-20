@@ -1,3 +1,4 @@
+import json
 import os
 import csv
 
@@ -13,18 +14,24 @@ class TempFile:
     """
     FILE_NAME = "temp.csv"
 
-    def __init__(self, data_example: dict) -> None:
+    def __init__(self) -> None:
         file_exists = os.path.exists(self.FILE_NAME)
         read_append = 'r+' if file_exists else 'a+'
 
         self.__data = dict()
         self.__file = open(self.FILE_NAME, read_append)
-        self.__file_writer = self.__get_file_writer(data_example)
+        self.__file_writer = None
 
         if file_exists:
             self.__data = self.__read_temp_data()
-        else:
-            self.__file_writer.writeheader()
+
+    def __create_file(self, data_example: dict) -> None:
+        """
+        Create temp file with headers from keys in provided data_example
+        """
+        self.__file_writer = self.__get_file_writer(data_example)
+        self.__file_writer.writeheader()
+        self.__file.flush()
 
     def __get_file_writer(self, data_example: dict) -> csv.DictWriter:
         """
@@ -38,15 +45,16 @@ class TempFile:
                 'Expected "navnelbnr" field to be provided in data example')
 
         return csv.DictWriter(
-            self.__file, fieldnames=fieldnames, extrasaction='ignore')
+            self.__file, fieldnames=fieldnames, extrasaction='ignore', delimiter=";")
 
     def __read_temp_data(self) -> dict:
         """
         Read temp file as a dictionary, indexed by p-number
         """
-        reader = csv.DictReader(self.__file)
+        reader = csv.DictReader(self.__file, delimiter=";")
         out = dict()
         for entry in reader:
+            entry['smiley_reports'] = json.loads(entry['smiley_reports'])
             out[entry['navnelbnr']] = entry
         return out
 
@@ -58,8 +66,14 @@ class TempFile:
             self.close()
             raise ValueError('Expected data to have "navnelbnr" key')
 
+        if not self.__file_writer:
+            self.__create_file(data)
+
+        dataCopy = data.copy()
+        dataCopy['smiley_reports'] = json.dumps(dataCopy['smiley_reports'])
+
         self.__data[data['navnelbnr']] = data
-        self.__file_writer.writerow(data)
+        self.__file_writer.writerow(dataCopy)
         self.__file.flush()
 
     def close(self) -> None:

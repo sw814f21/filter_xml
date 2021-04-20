@@ -115,11 +115,13 @@ class BaseDataHandler:
         with open(self.SMILEY_JSON, 'r') as f:
             d = json.loads(f.read())
 
-        temp_file = TempFile(d[0])
-
-        prev_processed = PrevProcessedFile('processed_companies.csv')
+        temp_file = TempFile()
 
         res = temp_file.get_all()
+
+        prev_processed = PrevProcessedFile('processed_companies.csv')
+        prev_processed.add_list(res)
+
         total_rows = len(d)
         row_index = 0
 
@@ -136,25 +138,23 @@ class BaseDataHandler:
 
                 # then ensure it hasn't already been processed prior to a crash, and
                 # that it should be processed at all cf. previously processed restaurants
-                if not temp_file.contains(restaurant['pnr']) \
-                        and prev_processed.should_process_restaurant(restaurant):
+                if prev_processed.should_process_restaurant(restaurant):
 
                     # only sleep if --no-scrape is not passed, and if our cvr provider requests it.
                     if not self._skip_scrape and self.cvr_handler.SHOULD_SLEEP and row_index > 0:
                         time.sleep(self.cvr_handler.CRAWL_DELAY)
 
                     # only collect data if we haven't passed --no-scrape
-                    if self._skip_scrape:
-                        processed = restaurant
-                    else:
-                        processed = self.cvr_handler.collect_data(restaurant)
-                        processed = self.smiley_handler.collect_data(processed)
+                    if not self._skip_scrape:
+                        restaurant = self.cvr_handler.collect_data(restaurant)
+                        restaurant = self.smiley_handler.collect_data(restaurant)
 
                     # check filters to see if we should keep the row
-                    if self._should_keep(processed):
-                        res.append(processed)
-                        temp_file.add_data(processed)
+                    if self._should_keep(restaurant):
+                        res.append(restaurant)
                         row_kept = True
+
+                    temp_file.add_data(restaurant)
 
             # if any check resulted in a row skip, decrement the total row count
             # for terminal output purposes
@@ -168,7 +168,8 @@ class BaseDataHandler:
 
             row_index += 1
 
-        prev_processed.output_processed_companies(res)
+        prev_processed.add_list(temp_file.get_all())
+        prev_processed.output_processed_companies()
         temp_file.close()
 
         res = self._rename_keys(res)

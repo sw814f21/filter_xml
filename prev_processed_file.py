@@ -1,6 +1,7 @@
 import csv
 
 from datetime import datetime
+from config import FilterXMLConfig
 
 
 class PrevProcessedFile:
@@ -12,7 +13,7 @@ class PrevProcessedFile:
     after every ended session.
     """
 
-    def __init__(self, file_path) -> None:
+    def __init__(self, file_path: str) -> None:
         self.file_path = file_path
         self.__processed_restaurants = self.__input_processed_companies()
 
@@ -22,23 +23,30 @@ class PrevProcessedFile:
         """
         return self.__processed_restaurants.get(seq_nr)
 
-    def output_processed_companies(self, restaurants: list) -> None:
+    def add_list(self, restaurants: list) -> None:
         """
-        Write list of restaurant dicts to file processed_companies.csv
+        Add list of restaurants to list of processed comapnies to be written to file
+        """
+        for restaurant in restaurants:
+            self.add(restaurant)
+
+    def add(self, restaurant: dict) -> None:
+        """
+        Add restaurant to list of processed companies to be written to file
+        """
+        seq_nr = restaurant['navnelbnr']
+        control_date = restaurant['smiley_reports'][0]['date']
+        self.__processed_restaurants[seq_nr] = control_date
+
+    def output_processed_companies(self) -> None:
+        """
+        Write processed restaurants to file processed_companies.csv
         """
         with open(self.file_path, 'w+') as f:
-            fieldnames = ['navnelbnr', 'seneste_kontrol_dato']
-            writer = csv.DictWriter(
-                f, fieldnames=fieldnames, extrasaction='ignore')
-
-            writer.writeheader()
-
-            for restaurant in restaurants:
-                writer.writerow(restaurant)
+            writer = csv.writer(f)
 
             for seq_nr, control_date in self.__processed_restaurants.items():
-                writer.writerow(
-                    {'navnelbnr': seq_nr, 'seneste_kontrol_dato': control_date})
+                writer.writerow([seq_nr, control_date])
 
     def should_process_restaurant(self, restaurant: dict) -> bool:
         """
@@ -60,14 +68,13 @@ class PrevProcessedFile:
                 return False
         return True
 
-    @staticmethod
+    @ staticmethod
     def __is_control_newer(new_date_str: str, previous_date_str: str) -> bool:
         """
         Check if new_date is different from our stored date.
         """
-        date_format = '%d-%m-%Y %H:%M:%S'
-        new_date = datetime.strptime(new_date_str, date_format)
-        previous_date = datetime.strptime(previous_date_str, date_format)
+        new_date = datetime.strptime(new_date_str, '%d-%m-%Y %H:%M:%S')
+        previous_date = datetime.strptime(previous_date_str, FilterXMLConfig.iso_fmt())
         return new_date > previous_date
 
     def __delete(self, seq_nr: str) -> None:
@@ -82,10 +89,10 @@ class PrevProcessedFile:
         """
         try:
             with open(self.file_path, 'r') as f:
-                reader = csv.DictReader(f)
+                reader = csv.reader(f)
                 out = dict()
-                for entry in reader:
-                    out[entry['navnelbnr']] = entry['seneste_kontrol_dato']
+                for row in reader:
+                    out[row[0]] = row[1]
                 return out
         except FileNotFoundError:
             return {}
