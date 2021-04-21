@@ -1,7 +1,7 @@
 import csv
 
 from datetime import datetime
-from config import FilterXMLConfig
+from filter_xml.config import FilterXMLConfig
 
 
 class PrevProcessedFile:

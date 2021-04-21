@@ -1,0 +1,19 @@
+from filter_xml.data_outputter import get_outputter
+from filter_xml.smiley_extractor import SmileyExtractor
+from filter_xml.data_processor import DataProcessor
+
+
+class DataHandler:
+    def __init__(self, *args, **kwargs) -> None:
+        sample_size = kwargs.pop('sample', 0)
+        skip_scrape = kwargs.pop('no_scrape', False)
+        outputter = get_outputter(kwargs.pop('push', False))
+        self.data_processor = DataProcessor(sample_size, skip_scrape, outputter)
+
+    def collect(self) -> None:
+        """
+            Main runner for collection
+        """
+
+        data = SmileyExtractor.create_smiley_json()
+        self.data_processor.process_smiley_json(data)

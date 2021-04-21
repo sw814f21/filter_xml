@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from temp_file import TempFile
+from filter_xml.temp_file import TempFile
 
 
 class TempFileTest(unittest.TestCase):
