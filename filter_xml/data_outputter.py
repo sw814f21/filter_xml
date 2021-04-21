@@ -21,6 +21,10 @@ class _BaseDataOutputter:
         Abstract implementation of method for sending a list of restaurants that should be
         inserted to the API
 
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+
         Should be overridden in inherited classes
         """
         raise NotImplementedError('Method called on base class; use inherited')
@@ -30,6 +34,10 @@ class _BaseDataOutputter:
         Abstract implementation of method for sending a list of restaurants that should be
         updated to the API
 
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+
         Should be overridden in inherited classes
         """
         raise NotImplementedError('Method called on base class; use inherited')
@@ -38,6 +46,10 @@ class _BaseDataOutputter:
         """
         Abstract implementation of method for sending a list of restaurants that should be
         deleted to the API
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
 
         Should be overridden in inherited classes
         """
