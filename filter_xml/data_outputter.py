@@ -60,17 +60,41 @@ class FileOutputter(_BaseDataOutputter):
     FILE_BASE = 'smiley_json_processed_'
 
     def get(self) -> list:
-        pass
+        """
+        Retrieve sample restaurants from file
+        """
+        raise NotImplementedError('Method not implemented for FileOutputter')
 
     def insert(self, data: Union[dict, list], token: int) -> None:
+        """
+        Output restaurants marked as insert to smiley_json_processed_PUT.json
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+        """
         with open(f'{self.FILE_BASE}PUT.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
     def update(self, data: Union[dict, list], token: int) -> None:
+        """
+        Output restaurants marked as update to smiley_json_processed_POST.json
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+        """
         with open(f'{self.FILE_BASE}POST.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
     def delete(self, data: Union[dict, list], token: int) -> None:
+        """
+        Output restaurants marked as delete to smiley_json_processed_DELETE.json
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+        """
         with open(f'{self.FILE_BASE}DELETE.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
@@ -79,10 +103,20 @@ class DatabaseOutputter(_BaseDataOutputter):
     ENDPOINT = 'https://127.0.0.1/admin/load'
 
     def get(self) -> list:
+        """
+        Retrieve all current restaurants from the API
+        """
         res = requests.get(self.ENDPOINT)
         return json.loads(res.content.decode('utf-8'))
 
     def insert(self, data: Union[dict, list], token: int) -> None:
+        """
+        Send restaurants marked as insert to API
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+        """
         put_data = {
             'timestamp': token,
             'data': data
@@ -94,6 +128,13 @@ class DatabaseOutputter(_BaseDataOutputter):
             FileOutputter().insert(data, token)
 
     def update(self, data: Union[dict, list], token: int) -> None:
+        """
+        Send restaurants marked as update to API
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+        """
         post_data = {
             'timestamp': token,
             'data': data
@@ -105,6 +146,13 @@ class DatabaseOutputter(_BaseDataOutputter):
             FileOutputter().update(data, token)
 
     def delete(self, data: Union[dict, list], token: int) -> None:
+        """
+        Send restaurants marked as delete to API
+
+        :param data: a list of restaurants or a single restaurant
+        :param token: an identifier for the current session, to ensure that separate
+                      POST / PUT / DELETE requests are recognized as a single version of data
+        """
         delete_data = {
             'timestamp': token,
             'data': data
