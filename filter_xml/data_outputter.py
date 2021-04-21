@@ -3,21 +3,48 @@ import requests
 from typing import Union
 
 
-class BaseDataOutputter:
+class _BaseDataOutputter:
     """
         An abstract class that is used to define different output strategies
     """
 
-    def write(self, data_to_write: Union[dict, list]) -> None:
+    def get(self) -> list:
         """
-            An abstract method that takes in some data that should be outputtet as a dictionary
+        Abstract implementation of method for retrieving a list of all restaurants
 
-            Different implementations will then save this data in different places
+        Should be overridden in inherited classes
         """
-        pass
+        raise NotImplementedError('Method called on base class; use inherited')
+
+    def insert(self, data: Union[dict, list], token: int) -> None:
+        """
+        Abstract implementation of method for sending a list of restaurants that should be
+        inserted to the API
+
+        Should be overridden in inherited classes
+        """
+        raise NotImplementedError('Method called on base class; use inherited')
+
+    def update(self, data: Union[dict, list], token: int) -> None:
+        """
+        Abstract implementation of method for sending a list of restaurants that should be
+        updated to the API
+
+        Should be overridden in inherited classes
+        """
+        raise NotImplementedError('Method called on base class; use inherited')
+
+    def delete(self, data: Union[dict, list], token: int) -> None:
+        """
+        Abstract implementation of method for sending a list of restaurants that should be
+        deleted to the API
+
+        Should be overridden in inherited classes
+        """
+        raise NotImplementedError('Method called on base class; use inherited')
 
 
-class FileOutputter(BaseDataOutputter):
+class FileOutputter(_BaseDataOutputter):
     def __init__(self):
         self.file_path = 'smiley_json_processed.json'
 
@@ -29,7 +56,7 @@ class FileOutputter(BaseDataOutputter):
             f.write(json.dumps(data_to_write, indent=4))
 
 
-class DatabaseOutputter(BaseDataOutputter):
+class DatabaseOutputter(_BaseDataOutputter):
     endpoint = 'https://127.0.0.1/admin/insert'
 
     def write(self, data: Union[dict, list]) -> None:
@@ -43,7 +70,7 @@ class DatabaseOutputter(BaseDataOutputter):
             FileOutputter().write(data)
 
 
-def get_outputter(should_send_to_db: bool) -> BaseDataOutputter:
+def get_outputter(should_send_to_db: bool) -> _BaseDataOutputter:
     """
         A helper method used to pick which outputter should be used
     """
