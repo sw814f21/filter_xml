@@ -1,9 +1,9 @@
-from src.data_outputter import BaseDataOutputter
+from filter_xml.data_outputter import BaseDataOutputter
 import time
-from src.temp_file import TempFile
-from src.prev_processed_file import PrevProcessedFile
-from src.cvr import get_cvr_handler, FindSmileyHandler
-from src.filters import Filters
+from filter_xml.temp_file import TempFile
+from filter_xml.prev_processed_file import PrevProcessedFile
+from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
+from filter_xml.filters import Filters
 
 
 class DataProcessor:

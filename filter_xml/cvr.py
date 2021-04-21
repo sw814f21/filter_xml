@@ -4,7 +4,7 @@ from requests import get
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from src.config import FilterXMLConfig
+from filter_xml.config import FilterXMLConfig
 
 
 class CVRHandlerBase:

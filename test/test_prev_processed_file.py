@@ -1,4 +1,4 @@
-from src.prev_processed_file import PrevProcessedFile
+from filter_xml.prev_processed_file import PrevProcessedFile
 import unittest
 import os
 

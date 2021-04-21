@@ -1,6 +1,6 @@
-from src.data_outputter import get_outputter
-from src.smiley_extractor import SmileyExtractor
-from src.data_processor import DataProcessor
+from filter_xml.data_outputter import get_outputter
+from filter_xml.smiley_extractor import SmileyExtractor
+from filter_xml.data_processor import DataProcessor
 
 
 class DataHandler:
