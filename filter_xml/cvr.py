@@ -4,17 +4,13 @@ from requests import get
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from config import FilterXMLConfig
+from filter_xml.config import FilterXMLConfig
 
 
 class CVRHandlerBase:
     """
     Base class for CVR handling. Every data retrieval method should be contained in their own
     class and inherit this one.
-
-    This class is also in charge of collecting data from findsmiley.dk - which probably could
-    and should be a separate class. In either case it should be run from here as a super()
-    call to collect_data() of the relevant subclass.
     """
     URL = ''
     SHOULD_SLEEP = False
@@ -27,62 +23,11 @@ class CVRHandlerBase:
                           if callable(getattr(self.__class__, fun))
                           and fun.startswith('append_')]
 
-        # all methods prefixed by 'findsmiley_' should be here
-        self.smiley_appenders = [self.findsmiley_append_reports]
-
     def collect_data(self, data: dict) -> dict:
         """
         Data collection method. All inherited classes should override this and return a super() call
         """
-        smiley = get(data['URL'])
-        smiley_soup = BeautifulSoup(smiley.content.decode('utf-8'), 'html.parser')
-
-        for appender in self.smiley_appenders:
-            data = appender(smiley_soup, data)
-
         return data
-
-    @staticmethod
-    def findsmiley_append_reports(soup: BeautifulSoup, row: dict) -> dict:
-        """
-        Append smiley reports from findsmiley.dk for the given row as a list of dicts on the form:
-            {
-                report_id: str
-                smiley: int
-                date: str
-            }
-        """
-        tags = soup.findAll('a', attrs={'target': '_blank'})
-        keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
-                'fjerdeseneste_kontrol']
-        reports = []
-
-        # we assume that pdfs will continue to appear in descending order
-        # if we want safe guarding against changes in order we can use
-        # date = t.find('p', attrs={'class': 'DateText'}).text
-        # and check the date against the fields of param: row
-        for tag, key in zip(tags, keys):
-            if row[key]:
-                url = tag.attrs['href']
-                date = datetime.strptime(
-                    row[f'{key}_dato'],
-                    '%d-%m-%Y %H:%M:%S'
-                )
-
-                d = {
-                    'report_id': url.split('?')[1],
-                    'smiley': row[key],
-                    'date': date.strftime(FilterXMLConfig.iso_fmt())
-                }
-
-                reports.append(d)
-
-                del row[key]
-                del row[f'{key}_dato']
-
-        row['smiley_reports'] = reports
-
-        return row
 
 
 class CVRHandlerVirk(CVRHandlerBase):
@@ -259,3 +204,71 @@ def get_cvr_handler() -> CVRHandlerBase:
     else:
         raise KeyError(f'provider \"{provider}\" is invalid, please choose one of '
                        f'[ cvrapi | virk | scrape ]')
+
+
+class FindSmileyHandler:
+    """
+    Handler for scraping smiley reports from findsmiley.dk
+    """
+
+    def __init__(self):
+        # collect all class methods prefixed by 'append_'
+        self.appenders = [getattr(self.__class__, fun)
+                          for fun in dir(self.__class__)
+                          if callable(getattr(self.__class__, fun))
+                          and fun.startswith('append_')]
+
+    def collect_data(self, data: dict) -> dict:
+        """
+        Data collection method. Retrieves findsmiley.dk page for the given company and runs
+        every appender on it.
+        """
+        smiley = get(data['URL'])
+        smiley_soup = BeautifulSoup(smiley.content.decode('utf-8'), 'html.parser')
+
+        for appender in self.appenders:
+            data = appender(smiley_soup, data)
+
+        return data
+
+    @staticmethod
+    def append_smiley_reports(soup: BeautifulSoup, row: dict) -> dict:
+        """
+        Append smiley reports from findsmiley.dk for the given row as a list of dicts on the form:
+            {
+                report_id: str
+                smiley: int
+                date: str
+            }
+        """
+        tags = soup.findAll('a', attrs={'target': '_blank'})
+        keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
+                'fjerdeseneste_kontrol']
+        reports = []
+
+        # we assume that pdfs will continue to appear in descending order
+        # if we want safe guarding against changes in order we can use
+        # date = t.find('p', attrs={'class': 'DateText'}).text
+        # and check the date against the fields of param: row
+        for tag, key in zip(tags, keys):
+            if row[key]:
+                url = tag.attrs['href']
+                date = datetime.strptime(
+                    row[f'{key}_dato'],
+                    '%d-%m-%Y %H:%M:%S'
+                )
+
+                d = {
+                    'report_id': url.split('?')[1],
+                    'smiley': row[key],
+                    'date': date.strftime(FilterXMLConfig.iso_fmt())
+                }
+
+                reports.append(d)
+
+                del row[key]
+                del row[f'{key}_dato']
+
+        row['smiley_reports'] = reports
+
+        return row

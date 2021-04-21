@@ -1,12 +1,14 @@
 import json
 import requests
+from typing import Union
+
 
 class BaseDataOutputter:
     """
         An abstract class that is used to define different output strategies
     """
 
-    def write(self, data_to_write: dict) -> None:
+    def write(self, data_to_write: Union[dict, list]) -> None:
         """
             An abstract method that takes in some data that should be outputtet as a dictionary
 
@@ -18,19 +20,19 @@ class BaseDataOutputter:
 class FileOutputter(BaseDataOutputter):
     def __init__(self):
         self.file_path = 'smiley_json_processed.json'
-    
 
-    def write(self, data: dict) -> None:
+    def write(self, data_to_write: Union[dict, list]) -> None:
         """
             An overwritten method that saves the data to a file
         """
         with open(self.file_path, 'w') as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(data_to_write, indent=4))
+
 
 class DatabaseOutputter(BaseDataOutputter):
     endpoint = 'https://127.0.0.1/admin/insert'
 
-    def write(self, data: dict) -> None:
+    def write(self, data: Union[dict, list]) -> None:
         """
             An overwritten method that pipes that data to an api endpoint
         """
@@ -41,7 +43,7 @@ class DatabaseOutputter(BaseDataOutputter):
             FileOutputter().write(data)
 
 
-def get_outputter(should_send_to_db) -> BaseDataOutputter:
+def get_outputter(should_send_to_db: bool) -> BaseDataOutputter:
     """
         A helper method used to pick which outputter should be used
     """
@@ -49,7 +51,3 @@ def get_outputter(should_send_to_db) -> BaseDataOutputter:
         return DatabaseOutputter()
     else:
         return FileOutputter()
-
-
-
-
