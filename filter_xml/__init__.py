@@ -9,6 +9,8 @@ arg_parser.add_argument('--no-scrape', '-ns', action='store_true',
                         help='skip scraping during run')
 arg_parser.add_argument('--push', '-p', action='store_true',
                         help='push output to rust server')
+arg_parser.add_argument('--file', '-f', nargs=1, type=str,
+                        help='file path for xml to use (default: get from fødevarestyrelsen)')
 
 
 def run():
@@ -17,6 +19,7 @@ def run():
     dh = DataHandler(
         sample=args.sample,
         no_scrape=args.no_scrape,
-        push=args.push
+        push=args.push,
+        file=args.file[0] if args.file else None
     )
     dh.collect()
