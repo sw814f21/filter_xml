@@ -16,7 +16,7 @@ class _BaseDataOutputter:
         """
         raise NotImplementedError('Method called on base class; use inherited')
 
-    def insert(self, data: Union[dict, list], token: int) -> None:
+    def insert(self, data: Union[dict, list], token: str) -> None:
         """
         Abstract implementation of method for sending a list of restaurants that should be
         inserted to the API
@@ -29,7 +29,7 @@ class _BaseDataOutputter:
         """
         raise NotImplementedError('Method called on base class; use inherited')
 
-    def update(self, data: Union[dict, list], token: int) -> None:
+    def update(self, data: Union[dict, list], token: str) -> None:
         """
         Abstract implementation of method for sending a list of restaurants that should be
         updated to the API
@@ -42,7 +42,7 @@ class _BaseDataOutputter:
         """
         raise NotImplementedError('Method called on base class; use inherited')
 
-    def delete(self, data: Union[dict, list], token: int) -> None:
+    def delete(self, data: Union[dict, list], token: str) -> None:
         """
         Abstract implementation of method for sending a list of restaurants that should be
         deleted to the API
@@ -65,7 +65,7 @@ class FileOutputter(_BaseDataOutputter):
         """
         return DatabaseOutputter().get()
 
-    def insert(self, data: Union[dict, list], token: int) -> None:
+    def insert(self, data: Union[dict, list], token: str) -> None:
         """
         Output restaurants marked as insert to smiley_json_processed_PUT.json
 
@@ -76,7 +76,7 @@ class FileOutputter(_BaseDataOutputter):
         with open(f'{self.FILE_BASE}insert.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
-    def update(self, data: Union[dict, list], token: int) -> None:
+    def update(self, data: Union[dict, list], token: str) -> None:
         """
         Output restaurants marked as update to smiley_json_processed_POST.json
 
@@ -87,7 +87,7 @@ class FileOutputter(_BaseDataOutputter):
         with open(f'{self.FILE_BASE}update.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
-    def delete(self, data: Union[dict, list], token: int) -> None:
+    def delete(self, data: Union[dict, list], token: str) -> None:
         """
         Output restaurants marked as delete to smiley_json_processed_DELETE.json
 
@@ -109,7 +109,7 @@ class DatabaseOutputter(_BaseDataOutputter):
         res = requests.get(self.ENDPOINT)
         return json.loads(res.content.decode('utf-8'))
 
-    def insert(self, data: Union[dict, list], token: int) -> None:
+    def insert(self, data: Union[dict, list], token: str) -> None:
         """
         Send restaurants marked as insert to API
 
@@ -127,7 +127,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             print('Failed to send data to database, writing to file instead')
             FileOutputter().insert(data, token)
 
-    def update(self, data: Union[dict, list], token: int) -> None:
+    def update(self, data: Union[dict, list], token: str) -> None:
         """
         Send restaurants marked as update to API
 
@@ -145,7 +145,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             print('Failed to send data to database, writing to file instead')
             FileOutputter().update(data, token)
 
-    def delete(self, data: Union[dict, list], token: int) -> None:
+    def delete(self, data: Union[dict, list], token: str) -> None:
         """
         Send restaurants marked as delete to API
 
