@@ -3,7 +3,7 @@ import time
 from filter_xml.temp_file import TempFile
 from filter_xml.prev_processed_file import PrevProcessedFile
 from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
-from filter_xml.filters import Filters
+from filter_xml.filters import PostFilters
 
 
 class DataProcessor:
@@ -19,11 +19,7 @@ class DataProcessor:
         self._outputter = outputter
 
         # collect all class methods prefixed by 'filter_'
-        filters = Filters()
-        self.filters = [getattr(filters.__class__, fun)
-                        for fun in dir(filters.__class__)
-                        if callable(getattr(filters.__class__, fun))
-                        and fun.startswith('filter_')]
+        self.post_filters = PostFilters().filters()
 
     def process_smiley_json(self, data: list) -> None:
         """
@@ -76,7 +72,7 @@ class DataProcessor:
                         restaurant = self._smiley_handler.collect_data(restaurant)
 
                     # check filters to see if we should keep the row
-                    if self._should_keep(restaurant):
+                    if all([filter_(restaurant) for filter_ in self.post_filters]):
                         res.append(restaurant)
                         row_kept = True
 
@@ -151,10 +147,3 @@ class DataProcessor:
         p-number and a CVR number.
         """
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
-
-    def _should_keep(self, data: dict) -> bool:
-        """
-        Apply filters to see if row should be kept in result
-        """
-        res = [_filter(data) for _filter in self.filters]
-        return all(res)
