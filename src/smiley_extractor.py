@@ -12,7 +12,7 @@ class SmileyExtractor:
     SMILEY_JSON = 'smiley_json.json'
 
     @staticmethod
-    def create_smiley_json() -> None:
+    def create_smiley_json() -> dict:
         """
         Create .json file from smiley XML data from Fødevarestyrelsen.
         """
@@ -31,8 +31,7 @@ class SmileyExtractor:
             SmileyExtractor._strip_whitespace(new_obj, 'navn1')
             res.append(new_obj)
 
-        with open(SmileyExtractor.SMILEY_JSON, 'w') as f:
-            f.write(json.dumps(res, indent=4, sort_keys=True))
+        return res
 
     @staticmethod
     def _convert_to_int(data: dict, *keys) -> None:

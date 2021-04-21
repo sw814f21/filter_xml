@@ -26,7 +26,7 @@ class DataProcessor():
                         if callable(getattr(filters.__class__, fun))
                         and fun.startswith('filter_')]
 
-    def process_smiley_json(self, json_file_path: str) -> None:
+    def process_smiley_json(self, data: dict) -> None:
         """
         Processes smiley .json file.
             Includes only production units
@@ -42,9 +42,6 @@ class DataProcessor():
 
         Once data has been processed, keys are renamed. Cf. the translation map in _rename_keys()
         """
-        with open(json_file_path, 'r') as f:
-            d = json.loads(f.read())
-
         temp_file = TempFile()
 
         res = temp_file.get_all()
@@ -52,10 +49,10 @@ class DataProcessor():
         prev_processed = PrevProcessedFile('processed_companies.csv')
         prev_processed.add_list(res)
 
-        total_rows = len(d)
+        total_rows = len(data)
         row_index = 0
 
-        for restaurant in d:
+        for restaurant in data:
             # we use this to avoid using the same fallback in three separate if statements
             row_kept = False
 
@@ -85,6 +82,7 @@ class DataProcessor():
                         row_kept = True
 
                     temp_file.add_data(restaurant)
+                    prev_processed.add(restaurant)
 
             # if any check resulted in a row skip, decrement the total row count
             # for terminal output purposes
