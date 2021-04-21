@@ -63,7 +63,7 @@ class FileOutputter(_BaseDataOutputter):
         """
         Retrieve sample restaurants from file
         """
-        raise NotImplementedError('Method not implemented for FileOutputter')
+        return DatabaseOutputter().get()
 
     def insert(self, data: Union[dict, list], token: int) -> None:
         """
@@ -73,7 +73,7 @@ class FileOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
-        with open(f'{self.FILE_BASE}PUT.json', 'w') as f:
+        with open(f'{self.FILE_BASE}insert.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
     def update(self, data: Union[dict, list], token: int) -> None:
@@ -84,7 +84,7 @@ class FileOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
-        with open(f'{self.FILE_BASE}POST.json', 'w') as f:
+        with open(f'{self.FILE_BASE}update.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
     def delete(self, data: Union[dict, list], token: int) -> None:
@@ -95,7 +95,7 @@ class FileOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
-        with open(f'{self.FILE_BASE}DELETE.json', 'w') as f:
+        with open(f'{self.FILE_BASE}delete.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
 
 
