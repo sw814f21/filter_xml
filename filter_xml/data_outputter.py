@@ -57,29 +57,63 @@ class _BaseDataOutputter:
 
 
 class FileOutputter(_BaseDataOutputter):
-    def __init__(self):
-        self.file_path = 'smiley_json_processed.json'
+    FILE_BASE = 'smiley_json_processed_'
 
-    def write(self, data_to_write: Union[dict, list]) -> None:
-        """
-            An overwritten method that saves the data to a file
-        """
-        with open(self.file_path, 'w') as f:
-            f.write(json.dumps(data_to_write, indent=4))
+    def get(self) -> list:
+        pass
+
+    def insert(self, data: Union[dict, list], token: int) -> None:
+        with open(f'{self.FILE_BASE}PUT.json', 'w') as f:
+            f.write(json.dumps(data, indent=4))
+
+    def update(self, data: Union[dict, list], token: int) -> None:
+        with open(f'{self.FILE_BASE}POST.json', 'w') as f:
+            f.write(json.dumps(data, indent=4))
+
+    def delete(self, data: Union[dict, list], token: int) -> None:
+        with open(f'{self.FILE_BASE}DELETE.json', 'w') as f:
+            f.write(json.dumps(data, indent=4))
 
 
 class DatabaseOutputter(_BaseDataOutputter):
-    endpoint = 'https://127.0.0.1/admin/insert'
+    ENDPOINT = 'https://127.0.0.1/admin/load'
 
-    def write(self, data: Union[dict, list]) -> None:
-        """
-            An overwritten method that pipes that data to an api endpoint
-        """
-        r = requests.post(self.endpoint, json=data)
+    def get(self) -> list:
+        res = requests.get(self.ENDPOINT)
+        return json.loads(res.content.decode('utf-8'))
 
-        if r.status_code != 200:
+    def insert(self, data: Union[dict, list], token: int) -> None:
+        put_data = {
+            'timestamp': token,
+            'data': data
+        }
+        res = requests.put(self.ENDPOINT, data=put_data)
+
+        if res.status_code != 200:
             print('Failed to send data to database, writing to file instead')
-            FileOutputter().write(data)
+            FileOutputter().insert(data, token)
+
+    def update(self, data: Union[dict, list], token: int) -> None:
+        post_data = {
+            'timestamp': token,
+            'data': data
+        }
+        res = requests.post(self.ENDPOINT, data=post_data)
+
+        if res.status_code != 200:
+            print('Failed to send data to database, writing to file instead')
+            FileOutputter().update(data, token)
+
+    def delete(self, data: Union[dict, list], token: int) -> None:
+        delete_data = {
+            'timestamp': token,
+            'data': data
+        }
+        res = requests.delete(self.ENDPOINT, data=delete_data)
+
+        if res.status_code != 200:
+            print('Failed to send data to database, writing to file instead')
+            FileOutputter().delete(data, token)
 
 
 def get_outputter(should_send_to_db: bool) -> _BaseDataOutputter:
