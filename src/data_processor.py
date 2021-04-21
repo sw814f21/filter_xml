@@ -7,7 +7,7 @@ from src.cvr import get_cvr_handler, FindSmileyHandler
 from src.filters import Filters
 
 
-class DataProcessor():
+class DataProcessor:
     """
     Responsible for processing the data in smiley json file
     """
