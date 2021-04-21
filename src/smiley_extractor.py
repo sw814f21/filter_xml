@@ -9,24 +9,24 @@ class SmileyExtractor:
     SMILEY_XML_URL = 'https://www.foedevarestyrelsen.dk/_layouts/15/sdata/smiley_xml.xml'
     SMILEY_XML = 'smiley_xml.xml'
 
-    @staticmethod
-    def create_smiley_json() -> dict:
+    @classmethod
+    def create_smiley_json(cls) -> dict:
         """
         Create .json file from smiley XML data from Fødevarestyrelsen.
         """
-        SmileyExtractor._retrieve_smiley_data()
+        cls._retrieve_smiley_data()
 
-        tree = ET.parse(SmileyExtractor.SMILEY_XML)
+        tree = ET.parse(cls.SMILEY_XML)
         root = tree.getroot()
 
         res = []
 
         for row in list(root):
             new_obj = {col.tag: col.text for col in row}
-            SmileyExtractor._convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
-            SmileyExtractor._convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
-                                            'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
-            SmileyExtractor._strip_whitespace(new_obj, 'navn1')
+            cls._convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
+            cls._convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
+                                'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
+            cls._strip_whitespace(new_obj, 'navn1')
             res.append(new_obj)
 
         return res
@@ -56,11 +56,11 @@ class SmileyExtractor:
             data[k] = data[k].strip() if data[k] is not None and type(
                 data[k]) == str else data[k]
 
-    @staticmethod
-    def _retrieve_smiley_data() -> None:
+    @classmethod
+    def _retrieve_smiley_data(cls) -> None:
         """
         Download smiley XML data from Fødevarestyrelsen.
         """
-        res = get(SmileyExtractor.SMILEY_XML_URL)
-        with open(SmileyExtractor.SMILEY_XML, 'w') as f:
+        res = get(cls.SMILEY_XML_URL)
+        with open(cls.SMILEY_XML, 'w') as f:
             f.write(res.content.decode('utf-8'))
