@@ -26,7 +26,7 @@ class PreFilters(Filters):
         """
         Checks if row 'data' has received at least 1 control check.
         """
-        res = 'smiley_reports' in data.keys() and len(data['smiley_reports']) > 0
+        res = 'seneste_kontrol' in data.keys() and data['seneste_kontrol'] is not None
         print(f'control not null: {res}')
         return res
 
