@@ -1,6 +1,7 @@
 import json
 import requests
 
+
 class BaseDataOutputter:
     """
         An abstract class that is used to define different output strategies
@@ -18,14 +19,14 @@ class BaseDataOutputter:
 class FileOutputter(BaseDataOutputter):
     def __init__(self):
         self.file_path = 'smiley_json_processed.json'
-    
 
-    def write(self, data: dict) -> None:
+    def write(self, data_to_write: dict) -> None:
         """
             An overwritten method that saves the data to a file
         """
         with open(self.file_path, 'w') as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(data_to_write, indent=4))
+
 
 class DatabaseOutputter(BaseDataOutputter):
     endpoint = 'https://127.0.0.1/admin/insert'
@@ -49,7 +50,3 @@ def get_outputter(should_send_to_db) -> BaseDataOutputter:
         return DatabaseOutputter()
     else:
         return FileOutputter()
-
-
-
-
