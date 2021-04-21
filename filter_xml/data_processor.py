@@ -25,7 +25,7 @@ class DataProcessor:
                         if callable(getattr(filters.__class__, fun))
                         and fun.startswith('filter_')]
 
-    def process_smiley_json(self, data: dict) -> None:
+    def process_smiley_json(self, data: list) -> None:
         """
         Processes smiley .json file.
             Includes only production units
