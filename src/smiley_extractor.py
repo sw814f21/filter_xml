@@ -1,4 +1,3 @@
-import json
 from xml.etree import ElementTree as ET
 from requests import get
 
@@ -9,7 +8,6 @@ class SmileyExtractor:
     """
     SMILEY_XML_URL = 'https://www.foedevarestyrelsen.dk/_layouts/15/sdata/smiley_xml.xml'
     SMILEY_XML = 'smiley_xml.xml'
-    SMILEY_JSON = 'smiley_json.json'
 
     @staticmethod
     def create_smiley_json() -> dict:
