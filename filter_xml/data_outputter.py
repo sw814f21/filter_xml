@@ -1,5 +1,6 @@
 import json
 import requests
+from requests.exceptions import ConnectionError
 from typing import Union
 
 
@@ -106,8 +107,13 @@ class DatabaseOutputter(_BaseDataOutputter):
         """
         Retrieve all current restaurants from the API
         """
-        res = requests.get(self.ENDPOINT)
-        return json.loads(res.content.decode('utf-8'))
+        try:
+            res = requests.get(self.ENDPOINT, timeout=4)
+            if res.status_code == 200:
+                return json.loads(res.content.decode('utf-8'))
+        except ConnectionError:
+            print('Failed to connect to API')
+        return []
 
     def insert(self, data: Union[dict, list], token: str) -> None:
         """
