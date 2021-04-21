@@ -15,5 +15,5 @@ class DataHandler:
             Main runner for collection
         """
 
-        # SmileyExtractor.create_smiley_json()
-        self.dataProcessor.process_smiley_json(SmileyExtractor.SMILEY_JSON)
+        data = SmileyExtractor.create_smiley_json()
+        self.dataProcessor.process_smiley_json(data)
