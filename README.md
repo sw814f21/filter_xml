@@ -1,5 +1,22 @@
 # Smiley data handler
 
+Will do the following
+- Download the newest smiley XML from Fødevarestyrelsen
+    - Alternatively use an input file using the `--file, -f` command line arg
+- Convert the smiley XML to JSON
+- Append data from [Virk](https://datacvr.virk.dk/data/)
+    - By running each method prefixed by `append_` in class `filter_xml.cvr.CVRHandlerBase`
+- Append smiley report data from [FindSmiley](https://www.findsmiley.dk/Sider/Forside.aspx) for each restaurant
+    - By running each method prefixed by `append_` in class `filter_xml.cvr.FindSmileyHandler`
+- Filter the resulting data
+    - By running each method prefixed by `filter_` in class `filter_xml.filters.Filters`
+- Dump the result to three files: `smiley_json_processed_insert.json`, `smiley_json_processed_update.json`, and `smiley_json_processed_delete.json`
+    - Alternatively push it to the API using the `--push, -p` command line arg
+
+Only valid companies are included. That is, only companies with a p-number.
+
+Only industry codes `561010, 561020, 563000` are included (restaurants | pizzarias, ice cream, etc | cafes, pubs, etc).
+
 ## Configuration
 
 First copy `config.sample.ini` to `config.ini`, then fill out the missing fields.
@@ -21,30 +38,19 @@ To run
 $ python run.py
 ```
 
-Will do the following
-- Download the newest smiley XML from Fødevarestyrelsen
-- Convert the smiley XML to JSON
-- Append data from [Virk](https://datacvr.virk.dk/data/)
-    - By running each method prefixed by `append_cvr_` in class `DataHandler`
-- Append smiley report data from [FindSmiley](https://www.findsmiley.dk/Sider/Forside.aspx) for each restaurant
-    - By running each method prefixed by `append_smiley_` in class `DataHandler`
-- Filter the resulting data
-    - By running each method prefixed by `filter_` in class `DataHandler`
-- Dump the result to `smiley_json_processed.json`
-
-
 ### Arguments
 
 ```shell
 $ python run.py --help
-usage: run.py [-h] [--sample [SIZE]] [--no-scrape]
+usage: run.py [-h] [--sample [SIZE]] [--no-scrape] [--push] [--file FILE]
 
 optional arguments:
   -h, --help            show this help message and exit
   --sample [SIZE], -s [SIZE]
                         sample size, default: 0 (full run)
   --no-scrape, -ns      skip scraping during run
-  --push, -p            push output onto database instead of writing to file
+  --push, -p            push output to rust server
+  --file FILE, -f FILE  file path for xml to use (default: get from fødevarestyrelsen)
 ```
 
 #### --sample, -s
@@ -55,6 +61,10 @@ Takes no parameters. Skips scraping. Defaults to `False`, i.e. do scrape.
 
 #### --push, -p
 Takes no parameters. Save changes to database. Defaults to `False`, i.e. saves to json file.
+
+#### --file, -p
+Takes one parameter, `FILE`, as a `str`. Input file to use in place of retrieving the smiley XML from Fødevarestyrelsen. 
+Defaults to `None`, i.e. retrieve smiley XML from Fødevarestyrelsen.
 
 ## Data structure
 
@@ -178,14 +188,3 @@ Takes no parameters. Save changes to database. Defaults to `False`, i.e. saves t
     ...
 ]
 ```
-
-
-## Notes
-
-Only companies with a p-number is included.
-
-Start date and *actual* industry code (fødevarestyrelsen's data is scuffed) is scraped from virk.dk.
-Only industry codes `561010, 561020, 563000` are included (restaurants | pizzarias, ice cream, etc | cafes, pubs, etc).
-
-A company may not exist anymore - this can possibly be handled by excluding companies that have not received smiley control within the last year.
-
