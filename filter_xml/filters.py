@@ -1,3 +1,4 @@
+from filter_xml.blacklist import Blacklist
 from typing import List, Callable
 
 
@@ -21,6 +22,8 @@ class PreFilters(Filters):
     of data. All filters should be static.
     """
 
+    Blacklist.read_restaurants_file()
+
     @ staticmethod
     def filter_null_control(data: dict) -> bool:
         """
@@ -38,6 +41,12 @@ class PreFilters(Filters):
         res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
               and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
         print(f'coords not null: {res}')
+        return res
+
+    @ staticmethod
+    def filter_blacklisted(data: dict) -> bool:
+        res = data['navnelbnr'] not in Blacklist.restaurants
+        print(f'not in blacklist: {res}')
         return res
 
 

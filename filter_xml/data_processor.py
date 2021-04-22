@@ -3,7 +3,7 @@ from datetime import datetime
 from filter_xml.config import FilterXMLConfig
 from filter_xml.data_outputter import _BaseDataOutputter
 from filter_xml.temp_file import TempFile
-from filter_xml.prev_processed_file import PrevProcessedFile
+from filter_xml.blacklist import Blacklist
 from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
 from filter_xml.filters import PostFilters
 
@@ -45,9 +45,6 @@ class DataProcessor:
 
         res = temp_file.get_all()
 
-        prev_processed = PrevProcessedFile('processed_companies.csv')
-        prev_processed.add_list(res)
-
         total_rows = len(data)
         row_index = 0
 
@@ -62,9 +59,8 @@ class DataProcessor:
             # first check if the restaurant is valid
             if self.valid_production_unit(restaurant):
 
-                # then ensure it hasn't already been processed prior to a crash, and
-                # that it should be processed at all cf. previously processed restaurants
-                if prev_processed.should_process_restaurant(restaurant):
+                # then ensure it hasn't already been processed prior to a crash
+                if not temp_file.contains(restaurant['navnelbnr']):
 
                     # only sleep if --no-scrape is not passed, and if our cvr provider requests it.
                     if not self._skip_scrape and self._cvr_handler.SHOULD_SLEEP and row_index > 0:
@@ -76,12 +72,14 @@ class DataProcessor:
                         restaurant = self._smiley_handler.collect_data(restaurant)
 
                     # check filters to see if we should keep the row
+                    # otherwise add it to blacklist so we don't scrape it next time
                     if all([filter_(restaurant) for filter_ in self.post_filters]):
                         res.append(restaurant)
                         row_kept = True
+                    else:
+                        Blacklist.add(restaurant)
 
                     temp_file.add_data(restaurant)
-                    prev_processed.add(restaurant)
 
             # if any check resulted in a row skip, decrement the total row count
             # for terminal output purposes
@@ -95,8 +93,7 @@ class DataProcessor:
 
             row_index += 1
 
-        prev_processed.add_list(temp_file.get_all())
-        prev_processed.output_processed_companies()
+        Blacklist.output_to_file()
         temp_file.close()
 
         res = self._rename_keys(res)
