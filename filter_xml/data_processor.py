@@ -158,8 +158,8 @@ class DataProcessor:
 
     def create_diff(self, res: list) -> tuple:
         current_db = self._outputter.get()
-        current_ids = {[x['name_seq_nr'] for x in current_db]}
-        res_ids = {[x['name_seq_nr'] for x in res]}
+        current_ids = {x['name_seq_nr'] for x in current_db}
+        res_ids = {x['name_seq_nr'] for x in res}
 
         res_by_key = {x['name_seq_nr']: x for x in res}
         current_by_key = {x['name_seq_nr']: x for x in current_db}
@@ -171,7 +171,7 @@ class DataProcessor:
         insert = [res_by_key[x] for x in insert_ids]
         update = self.check_rows_for_updates(update_ids, res_by_key, current_by_key)
 
-        return insert, update, delete_ids
+        return insert, update, list(delete_ids)
 
     def check_rows_for_updates(self, ids: set, new: dict, old: dict):
         out = []
