@@ -1,5 +1,7 @@
-from filter_xml.data_outputter import BaseDataOutputter
 import time
+from datetime import datetime
+from filter_xml.config import FilterXMLConfig
+from filter_xml.data_outputter import _BaseDataOutputter
 from filter_xml.temp_file import TempFile
 from filter_xml.prev_processed_file import PrevProcessedFile
 from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
@@ -11,7 +13,7 @@ class DataProcessor:
     Responsible for processing the data in smiley json file
     """
 
-    def __init__(self, sample_size: int, skip_scrape: bool, outputter: BaseDataOutputter) -> None:
+    def __init__(self, sample_size: int, skip_scrape: bool, outputter: _BaseDataOutputter) -> None:
         self._cvr_handler = get_cvr_handler()
         self._smiley_handler = FindSmileyHandler()
         self._sample_size = sample_size
@@ -41,6 +43,8 @@ class DataProcessor:
 
         Once data has been processed, keys are renamed. Cf. the translation map in _rename_keys()
         """
+        # TODO: use outputter.get to get all restaurants from database
+
         temp_file = TempFile()
 
         res = temp_file.get_all()
@@ -101,7 +105,10 @@ class DataProcessor:
 
         res = self._rename_keys(res)
 
-        self._outputter.write(res)
+        token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
+
+        # TODO: split output into outputter.insert, -.update, and -.delete
+        self._outputter.insert(res, token)
 
     @ staticmethod
     def _has_cvr(row: dict) -> bool:
