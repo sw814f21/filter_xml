@@ -1,5 +1,6 @@
 from xml.etree import ElementTree as ET
 from requests import get
+from filter_xml.filters import PreFilters
 
 
 class SmileyExtractor:
@@ -11,6 +12,7 @@ class SmileyExtractor:
     def __init__(self, file_path: str, should_get_xml: bool):
         self.smiley_xml = file_path
         self.should_get_xml = should_get_xml
+        self.pre_filters = PreFilters().filters()
 
     def create_smiley_json(self) -> list:
         """
@@ -26,6 +28,11 @@ class SmileyExtractor:
 
         for row in list(root):
             new_obj = {col.tag: col.text for col in row}
+
+            # run all pre filters and skip if all does not pass
+            if not all([filter_(new_obj) for filter_ in self.pre_filters]):
+                continue
+
             self._convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
             self._convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
                                  'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
