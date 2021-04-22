@@ -39,7 +39,6 @@ class DataProcessor:
 
         Once data has been processed, keys are renamed. Cf. the translation map in _rename_keys()
         """
-        # TODO: use outputter.get to get all restaurants from database
 
         temp_file = TempFile()
 
@@ -100,11 +99,13 @@ class DataProcessor:
         temp_file.close()
 
         res = self._rename_keys(res)
+        insert, update, delete = self.create_diff(res)
 
         token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
 
-        # TODO: split output into outputter.insert, -.update, and -.delete
-        self._outputter.insert(res, token)
+        self._outputter.insert(insert, token)
+        self._outputter.update(update, token)
+        self._outputter.delete(delete, token)
 
     @ staticmethod
     def _has_cvr(row: dict) -> bool:
@@ -154,3 +155,47 @@ class DataProcessor:
         p-number and a CVR number.
         """
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
+
+    def create_diff(self, res: list) -> tuple:
+        current_db = self._outputter.get()
+        current_ids = {[x['name_seq_nr'] for x in current_db]}
+        res_ids = {[x['name_seq_nr'] for x in res]}
+
+        res_by_key = {x['name_seq_nr']: x for x in res}
+        current_by_key = {x['name_seq_nr']: x for x in current_db}
+
+        insert_ids = res_ids.difference(current_ids)
+        delete_ids = current_ids.difference(res_ids)
+        update_ids = res_ids.intersection(current_ids)
+
+        insert = [res_by_key[x] for x in insert_ids]
+        update = self.check_rows_for_updates(update_ids, res_by_key, current_by_key)
+
+        return insert, update, delete_ids
+
+    def check_rows_for_updates(self, ids: set, new: dict, old: dict):
+        out = []
+
+        for id_ in ids:
+            if self.has_update(new[id_], old[id_]):
+                out.append(new[id_].copy())
+
+        return out
+
+    @staticmethod
+    def has_update(new: dict, old: dict):
+        comp_keys = ['cvrnr', 'pnr', 'region', 'industry_code', 'industry_text', 'start_date',
+                     'city', 'elite_smiley', 'geo_lat', 'geo_lng', 'franchise_name',
+                     'niche_industry', 'url', 'address', 'name', 'name_seq_nr', 'zip_code',
+                     'ad_protection', 'company_type']
+        smiley_keys = ['report_id', 'smiley', 'date']
+
+        for k in comp_keys:
+            if new[k] != old[k]:
+                return True
+
+            for sk in smiley_keys:
+                if new['smiley_reports'][sk] != old['smiley_reports'][sk]:
+                    return True
+
+        return False
