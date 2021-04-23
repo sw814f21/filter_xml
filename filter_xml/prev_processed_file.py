@@ -2,6 +2,7 @@ import csv
 
 from datetime import datetime
 from filter_xml.config import FilterXMLConfig
+from filter_xml.catalog import Restaurant
 
 
 class PrevProcessedFile:
@@ -30,12 +31,12 @@ class PrevProcessedFile:
         for restaurant in restaurants:
             self.add(restaurant)
 
-    def add(self, restaurant: dict) -> None:
+    def add(self, restaurant: Restaurant) -> None:
         """
         Add restaurant to list of processed companies to be written to file
         """
-        seq_nr = restaurant['navnelbnr']
-        control_date = restaurant['smiley_reports'][0]['date']
+        seq_nr = restaurant.name_seq_nr
+        control_date = restaurant.smiley_reports[0].date_string
         self.__processed_restaurants[seq_nr] = control_date
 
     def output_processed_companies(self) -> None:
@@ -48,15 +49,15 @@ class PrevProcessedFile:
             for seq_nr, control_date in self.__processed_restaurants.items():
                 writer.writerow([seq_nr, control_date])
 
-    def should_process_restaurant(self, restaurant: dict) -> bool:
+    def should_process_restaurant(self, restaurant: Restaurant) -> bool:
         """
         Check whether or not a restaurant should be processed.
         Returns True if:
             the restaurant does not exist in the file, or
             the restaurant has received a new check up since last time it was processed
         """
-        seq_nr = restaurant['navnelbnr']
-        control_date = restaurant['seneste_kontrol_dato']
+        seq_nr = restaurant.name_seq_nr
+        control_date = restaurant.smiley_reports[0].date_string
         prev_processed_restaurant_date = self.get_control_date_by_seq_nr(
             seq_nr)
         if prev_processed_restaurant_date:
@@ -73,7 +74,7 @@ class PrevProcessedFile:
         """
         Check if new_date is different from our stored date.
         """
-        new_date = datetime.strptime(new_date_str, '%d-%m-%Y %H:%M:%S')
+        new_date = datetime.strptime(new_date_str, FilterXMLConfig.iso_fmt())
         previous_date = datetime.strptime(previous_date_str, FilterXMLConfig.iso_fmt())
         return new_date > previous_date
 
