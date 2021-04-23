@@ -228,12 +228,7 @@ class FindSmileyHandler:
     @staticmethod
     def append_smiley_reports(soup: BeautifulSoup, row: Restaurant) -> Restaurant:
         """
-        Append smiley reports from findsmiley.dk for the given row as a list of dicts on the form:
-            {
-                report_id: str
-                smiley: int
-                date: str
-            }
+        Append smiley report IDs from findsmiley.dk for the given row
         """
         tags = soup.findAll('a', attrs={'target': '_blank'})
 
