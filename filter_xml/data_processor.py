@@ -179,7 +179,7 @@ class DataProcessor:
 
         return insert, update, list(delete_ids)
 
-    def check_rows_for_updates(self, ids: set, new: dict, old: dict) -> list[dict]:
+    def check_rows_for_updates(self, ids: set, new: dict, old: dict) -> list:
         """
         Compare each row of new data with their corresponding old row. Used to check for updates
         in data.
