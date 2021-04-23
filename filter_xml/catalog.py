@@ -19,7 +19,7 @@ class Restaurant:
         self.industry_text = row['branche']  # type: Optional[str]
         self.start_date = None  # type: Optional[datetime]
         self.smiley_reports = [SmileyReport(row[x[0]], row[x[1]])
-                               for x in self.REPORT_KEYS]  # type: List[SmileyReport]
+                               for x in self.REPORT_KEYS if row[x[0]]]  # type: List[SmileyReport]
         self.city = row['By']  # type: Optional[str]
         self.elite_smiley = row['Elite_Smiley']  # type: Optional[str]
         self.geo_lat = float(row['Geo_Lat']) if row['Geo_Lat'] else None  # type: Optional[float]
