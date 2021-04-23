@@ -157,6 +157,12 @@ class DataProcessor:
         return self._has_pnr(restaurant) and self._has_cvr(restaurant)
 
     def create_diff(self, res: list) -> tuple:
+        """
+        Construct the difference in data cf. the current contents of the database on the API.
+
+        :param res: the list of new data
+        :return: a tuple of the three types of differences, (insert, update, delete)
+        """
         current_db = self._outputter.get()
         current_ids = {x['name_seq_nr'] for x in current_db}
         res_ids = {x['name_seq_nr'] for x in res}
@@ -173,7 +179,11 @@ class DataProcessor:
 
         return insert, update, list(delete_ids)
 
-    def check_rows_for_updates(self, ids: set, new: dict, old: dict):
+    def check_rows_for_updates(self, ids: set, new: dict, old: dict) -> list[dict]:
+        """
+        Compare each row of new data with their corresponding old row. Used to check for updates
+        in data.
+        """
         out = []
 
         for id_ in ids:
@@ -183,7 +193,10 @@ class DataProcessor:
         return out
 
     @staticmethod
-    def has_update(new: dict, old: dict):
+    def has_update(new: dict, old: dict) -> bool:
+        """
+        Key-wise comparison of a single row of data
+        """
         comp_keys = ['cvrnr', 'pnr', 'region', 'industry_code', 'industry_text', 'start_date',
                      'city', 'elite_smiley', 'geo_lat', 'geo_lng', 'franchise_name',
                      'niche_industry', 'url', 'address', 'name', 'zip_code', 'ad_protection',
