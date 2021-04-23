@@ -50,11 +50,11 @@ class PostFilters(Filters):
     """
 
     @staticmethod
-    def filter_industry_codes(data: dict) -> bool:
+    def filter_industry_codes(data: Restaurant) -> bool:
         """
         Checks if row 'data' has a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        res = data.industry_code in include_codes
         print(f'valid industry code: {res}')
         return res
