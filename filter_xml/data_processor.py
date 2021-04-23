@@ -186,8 +186,8 @@ class DataProcessor:
     def has_update(new: dict, old: dict):
         comp_keys = ['cvrnr', 'pnr', 'region', 'industry_code', 'industry_text', 'start_date',
                      'city', 'elite_smiley', 'geo_lat', 'geo_lng', 'franchise_name',
-                     'niche_industry', 'url', 'address', 'name', 'name_seq_nr', 'zip_code',
-                     'ad_protection', 'company_type']
+                     'niche_industry', 'url', 'address', 'name', 'zip_code', 'ad_protection',
+                     'company_type']
         smiley_keys = ['report_id', 'smiley', 'date']
 
         for k in comp_keys:
