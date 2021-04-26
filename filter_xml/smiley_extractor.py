@@ -28,7 +28,7 @@ class SmileyExtractor:
         catalog = RestaurantCatalog()
 
         for row in list(root):
-            new_obj = Restaurant({col.tag: col.text for col in row})
+            new_obj = Restaurant.from_xml({col.tag: col.text for col in row})
 
             # run all pre filters and skip if all does not pass
             if not all([filter_(new_obj) for filter_ in self.pre_filters]):
