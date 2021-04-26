@@ -15,35 +15,23 @@ class Blacklist:
     """
     _file_path = 'blacklist.csv'
     _restaurants = []
-    _file_read = False
+    _file_writer = None
+    _file = None
 
     @classmethod
     def add(cls, restaurant: dict) -> None:
+        """
+        Add a resturant to the blacklist and write it to the file
+        """
         seq_nr = restaurant['navnelbnr']
         cls._restaurants.append(seq_nr)
-
-    @classmethod
-    def output_to_file(cls) -> None:
-        """
-        Write processed restaurants to file processed_companies.csv
-        """
-
-        # Ensure file has been read so to also outut previous entries
-        if not cls._file_read:
-            cls.read_restaurants_file()
-
-        with open(cls._file_path, 'w+') as f:
-            writer = csv.writer(f)
-
-            for seq_nr in cls._restaurants:
-                writer.writerow([seq_nr])
-
+        cls._write_to_file(seq_nr)
+    
     @classmethod
     def read_restaurants_file(cls):
         """
-        Retrieve all previously processed restaurants
+        Retrieve all blacklisted restaurants from the blacklist file
         """
-        cls._file_read = True
         try:
             with open(cls._file_path, 'r') as f:
                 reader = csv.reader(f)
@@ -58,3 +46,19 @@ class Blacklist:
         Check if blacklist contains entry with given sequence number
         """
         return seq_nr in cls._restaurants
+
+    @classmethod
+    def close_file(cls):
+        """
+        Close the blacklist file
+        """
+        cls._file.close()
+
+    @classmethod
+    def _write_to_file(cls, seq_nr):
+        if not cls._file_writer:
+            cls._file = open(cls._file_path, 'a+')
+            cls._file_writer = csv.writer(cls._file)
+        
+        cls._file_writer.writerow([seq_nr])
+        cls._file.flush()

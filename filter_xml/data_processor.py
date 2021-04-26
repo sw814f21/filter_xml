@@ -93,8 +93,8 @@ class DataProcessor:
 
             row_index += 1
 
-        Blacklist.output_to_file()
         temp_file.close()
+        Blacklist.close_file()
 
         res = self._rename_keys(res)
 

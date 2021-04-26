@@ -13,7 +13,7 @@ class BlacklistTest(unittest.TestCase):
             os.remove(FILENAME)
 
     def setUp(self) -> None:
-        Blacklist._file_path = FILENAME
+        self.reset_blacklist_state()
         if os.path.exists(FILENAME):
             os.remove(FILENAME)
 
@@ -27,7 +27,7 @@ class BlacklistTest(unittest.TestCase):
     def test_contains_previously_outputted_entry(self):
         restaurant = {'navnelbnr': '1234'}
         Blacklist.add(restaurant)
-        Blacklist.output_to_file()
+        self.reset_blacklist_state()
 
         Blacklist.read_restaurants_file()
        
@@ -38,10 +38,8 @@ class BlacklistTest(unittest.TestCase):
         restaurant2 = {'navnelbnr': '4321'}
 
         Blacklist.add(restaurant1)
-        Blacklist.output_to_file()
         self.reset_blacklist_state()
         Blacklist.add(restaurant2)
-        Blacklist.output_to_file()
         Blacklist.read_restaurants_file()
 
         self.assertTrue(Blacklist.contains('1234'))
@@ -50,5 +48,6 @@ class BlacklistTest(unittest.TestCase):
 
     def reset_blacklist_state(self):
         Blacklist._restaurants = []
-        Blacklist._file_read = False
         Blacklist._file_path = FILENAME
+        Blacklist._file_writer = None
+        Blacklist._file = None
