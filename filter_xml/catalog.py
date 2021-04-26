@@ -3,13 +3,16 @@
 # note that __future__ imports must be the first line of the file
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, Set, Dict
 from datetime import datetime
 
 from filter_xml.config import FilterXMLConfig
 
 
 class Restaurant:
+    """
+    A class representing a single row of the smiley data
+    """
     REPORT_KEYS = [['seneste_kontrol', 'seneste_kontrol_dato'],
                    ['naestseneste_kontrol', 'naestseneste_kontrol_dato'],
                    ['tredjeseneste_kontrol', 'tredjeseneste_kontrol_dato'],
@@ -42,7 +45,12 @@ class Restaurant:
         self.company_type = None  # type: Optional[str]
         self.franchise_name = None  # type: Optional[str]
 
-    def __eq__(self, other: Restaurant):
+    def __eq__(self, other: Restaurant) -> bool:
+        """
+        Overridden equals operator (applies to == and !=). Will short circuit if one member
+        of self is not equal to the same member of :param other. The same applies to any given
+        element of the list Restaurant.smiley_reports, rather than the full list.
+        """
         for k in self.COMP_KEYS:
             if getattr(self, k) != getattr(other, k):
                 return False
@@ -53,7 +61,13 @@ class Restaurant:
         return True
 
     @classmethod
-    def from_xml(cls, row: dict):
+    def from_xml(cls, row: dict) -> Restaurant:
+        """
+        Constructs a single Restaurant object
+
+        Expects a dict as defined by:
+            https://github.com/sw814f21/filter_xml#after-json-conversion-before-further-processing
+        """
         self = Restaurant()
 
         self.cvrnr = row['cvrnr']
@@ -81,7 +95,13 @@ class Restaurant:
         return self
 
     @classmethod
-    def from_json(cls, row: dict):
+    def from_json(cls, row: dict) -> Restaurant:
+        """
+        Constructs a single Restaurant object
+
+        Expects a dict as as defined by:
+            https://github.com/sw814f21/filter_xml#final-output
+        """
         self = Restaurant()
 
         self.cvrnr = row['cvrnr']
@@ -108,23 +128,40 @@ class Restaurant:
         return self
 
     @property
-    def start_date_string(self):
+    def start_date_string(self) -> str:
+        """
+        ISO-8601 formatted start date string property
+        """
         return self.start_date.strftime(FilterXMLConfig.iso_fmt())
 
     def is_valid_production_unit(self) -> bool:
+        """
+        Determines whether or not this Restaurant is a valid production unit by ensuring that
+        both CVR- and P-numbers exist
+        """
         return self.cvrnr is not None and self.pnr is not None
 
     def as_dict(self) -> dict:
+        """
+        Formats object as a dict
+        """
         d = self.__dict__.copy()
         d['smiley_reports'] = [report.as_dict() for report in self.smiley_reports]
         d['start_date'] = self.start_date_string
         return d
 
     def has_update(self, old: Restaurant) -> bool:
+        """
+        Compares self with :param old. Checks whether or not self has been updated in accordance
+        to :param old
+        """
         return self != old
 
 
 class SmileyReport:
+    """
+    A class representing a single smiley report for a given restaurant
+    """
     COMP_KEYS = ['report_id', 'smiley', 'date']
 
     def __init__(self):
@@ -132,14 +169,24 @@ class SmileyReport:
         self.smiley = None  # type: Optional[int]
         self.date = None  # type: Optional[datetime]
 
-    def __eq__(self, other: SmileyReport):
+    def __eq__(self, other: SmileyReport) -> bool:
+        """
+        Overridden equals operator (applies to == and !=). Will short circuit if one member of self
+        is not equal to :param other
+        """
         for k in self.COMP_KEYS:
             if getattr(self, k) != getattr(other, k):
                 return False
         return True
 
     @classmethod
-    def from_xml(cls, smiley: int, date: str):
+    def from_xml(cls, smiley: str, date: str) -> SmileyReport:
+        """
+        Constructs a single SmileyReport object.
+
+        Expects a smiley identifier and a date string as defined by the *_kontrol* fields in:
+            https://github.com/sw814f21/filter_xml#after-json-conversion-before-further-processing
+        """
         self = SmileyReport()
 
         self.report_id = None
@@ -149,7 +196,13 @@ class SmileyReport:
         return self
 
     @classmethod
-    def from_json(cls, row: dict):
+    def from_json(cls, row: dict) -> SmileyReport:
+        """
+        Constructs a single SmileyReport object.
+
+        Expects a dict as defined by a row in the smiley_reports list in:
+            https://github.com/sw814f21/filter_xml#final-output
+        """
         self = SmileyReport()
 
         self.report_id = row['report_id']
@@ -160,15 +213,24 @@ class SmileyReport:
 
     @property
     def date_string(self) -> str:
+        """
+        ISO-8601 formatted date string property
+        """
         return self.date.strftime(FilterXMLConfig.iso_fmt())
 
     def as_dict(self) -> dict:
+        """
+        Formats object as a dict
+        """
         d = self.__dict__.copy()
         d['date'] = self.date_string
         return d
 
 
 class RestaurantCatalog:
+    """
+    A class representing a catalog of Restaurant objects
+    """
 
     def __init__(self):
         self.catalog = []  # type: List[Restaurant]
@@ -177,31 +239,57 @@ class RestaurantCatalog:
         self.catalog_size = 0
 
         # these should only be properly assigned in self.setup_diff()
-        self.old_ids = set()
-        self.old_by_key = dict()
-        self.new_ids = set()
-        self.new_by_key = dict()
+        self.old_ids = set()  # type: Set[str]
+        self.old_by_key = dict()  # type: Dict[str, Restaurant]
+        self.new_ids = set()  # type: Set[str]
+        self.new_by_key = dict()  # type: Dict[str, Restaurant]
 
-    def add(self, restaurant: Restaurant):
+    def add(self, restaurant: Restaurant) -> None:
+        """
+        Add a single restaurant to catalog and increment size
+        """
         self.catalog.append(restaurant)
         self.catalog_size += 1
 
-    def add_many(self, restaurants: list):
+    def add_many(self, restaurants: list) -> None:
+        """
+        Add a list of restaurants to catalog and increase size
+        """
         self.catalog.extend(restaurants)
         self.catalog_size += len(restaurants)
 
-    def setup_diff(self, current_db: RestaurantCatalog):
+    def setup_diff(self, current_db: RestaurantCatalog) -> None:
+        """
+        Basic setup for calculating diffs.
+        We could set the current database state (self.old_*) in __init__() and maintain the new
+        state (self.new_*) in add() and add_many(), but we don't to avoid memory bloat - we use
+        RestaurantCatalog both for the new data and for maintaining the result of the current run,
+        and we only need to calculate the diff on the result.
+        """
         self.new_by_key = {res.name_seq_nr: res for res in self.catalog}
         self.new_ids = set(self.new_by_key.keys())
         self.old_by_key = {res.name_seq_nr: res for res in current_db.catalog}
         self.old_ids = set(self.old_by_key.keys())
 
     def insert_set(self) -> list:
+        """
+        Construct the insert set using
+            new_set \ old_set
+        """
         return [self.new_by_key[x].as_dict() for x in self.new_ids.difference(self.old_ids)]
 
     def update_set(self) -> list:
+        """
+        Construct the update candidates using
+            new_set ∩ old_set
+        and collecting rows that have been updated by comparing them to their old counterparts
+        """
         return [self.new_by_key[x].as_dict() for x in self.new_ids.intersection(self.old_ids)
                 if self.new_by_key[x] != self.old_by_key[x]]
 
     def delete_set(self) -> list:
+        """
+        Construct the delete set using
+            old_set \ new_set
+        """
         return list(self.old_ids.difference(self.new_ids))
