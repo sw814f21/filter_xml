@@ -2,6 +2,7 @@ import json
 import requests
 from requests.exceptions import ConnectionError
 from typing import Union
+from filter_xml.catalog import RestaurantCatalog, Restaurant
 
 
 class _BaseDataOutputter:
@@ -9,7 +10,7 @@ class _BaseDataOutputter:
         An abstract class that is used to define different output strategies
     """
 
-    def get(self) -> list:
+    def get(self) -> RestaurantCatalog:
         """
         Abstract implementation of method for retrieving a list of all restaurants
 
@@ -60,7 +61,7 @@ class _BaseDataOutputter:
 class FileOutputter(_BaseDataOutputter):
     FILE_BASE = 'smiley_json_processed_'
 
-    def get(self) -> list:
+    def get(self) -> RestaurantCatalog:
         """
         Retrieve sample restaurants from file
         """
@@ -103,17 +104,19 @@ class FileOutputter(_BaseDataOutputter):
 class DatabaseOutputter(_BaseDataOutputter):
     ENDPOINT = 'https://127.0.0.1/admin/load'
 
-    def get(self) -> list:
+    def get(self) -> RestaurantCatalog:
         """
         Retrieve all current restaurants from the API
         """
+        catalog = RestaurantCatalog()
         try:
             res = requests.get(self.ENDPOINT, timeout=4)
             if res.status_code == 200:
-                return json.loads(res.content.decode('utf-8'))
+                catalog.add_many([Restaurant.from_json(row)
+                                  for row in json.loads(res.content.decode('utf-8'))])
         except ConnectionError:
             print('Failed to connect to API')
-        return []
+        return catalog
 
     def insert(self, data: Union[dict, list], token: str) -> None:
         """

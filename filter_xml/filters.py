@@ -1,4 +1,5 @@
 from typing import List, Callable
+from filter_xml.catalog import Restaurant
 
 
 class Filters:
@@ -22,21 +23,20 @@ class PreFilters(Filters):
     """
 
     @ staticmethod
-    def filter_null_control(data: dict) -> bool:
+    def filter_null_control(data: Restaurant) -> bool:
         """
         Checks if row 'data' has received at least 1 control check.
         """
-        res = 'seneste_kontrol' in data.keys() and data['seneste_kontrol'] is not None
+        res = len(data.smiley_reports) > 0
         print(f'control not null: {res}')
         return res
 
     @ staticmethod
-    def filter_null_coordinates(data: dict) -> bool:
+    def filter_null_coordinates(data: Restaurant) -> bool:
         """
         Checks if row 'data' has valid coordinates.
         """
-        res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
-              and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
+        res = data.geo_lat is not None and data.geo_lng is not None
         print(f'coords not null: {res}')
         return res
 
@@ -50,11 +50,11 @@ class PostFilters(Filters):
     """
 
     @staticmethod
-    def filter_industry_codes(data: dict) -> bool:
+    def filter_industry_codes(data: Restaurant) -> bool:
         """
         Checks if row 'data' has a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        res = data.industry_code in include_codes
         print(f'valid industry code: {res}')
         return res

@@ -1,6 +1,7 @@
 from xml.etree import ElementTree as ET
 from requests import get
 from filter_xml.filters import PreFilters
+from filter_xml.catalog import Restaurant, RestaurantCatalog
 
 
 class SmileyExtractor:
@@ -14,7 +15,7 @@ class SmileyExtractor:
         self.should_get_xml = should_get_xml
         self.pre_filters = PreFilters().filters()
 
-    def create_smiley_json(self) -> list:
+    def create_smiley_json(self) -> RestaurantCatalog:
         """
         Create .json file from smiley XML data from Fødevarestyrelsen.
         """
@@ -24,47 +25,18 @@ class SmileyExtractor:
         tree = ET.parse(self.smiley_xml)
         root = tree.getroot()
 
-        res = []
+        catalog = RestaurantCatalog()
 
         for row in list(root):
-            new_obj = {col.tag: col.text for col in row}
+            new_obj = Restaurant.from_xml({col.tag: col.text for col in row})
 
             # run all pre filters and skip if all does not pass
             if not all([filter_(new_obj) for filter_ in self.pre_filters]):
                 continue
 
-            self._convert_to_float(new_obj, 'Geo_Lat', 'Geo_Lng')
-            self._convert_to_int(new_obj, 'seneste_kontrol', 'naestseneste_kontrol',
-                                 'tredjeseneste_kontrol', 'fjerdeseneste_kontrol')
-            self._strip_whitespace(new_obj, 'navn1')
-            res.append(new_obj)
+            catalog.add(new_obj)
 
-        return res
-
-    @staticmethod
-    def _convert_to_int(data: dict, *keys) -> None:
-        """
-        Convert a set of values to ints if they exist
-        """
-        for k in keys:
-            data[k] = int(data[k]) if data[k] is not None else None
-
-    @staticmethod
-    def _convert_to_float(data: dict, *keys) -> None:
-        """
-        Convert a set of values to floats if they exist
-        """
-        for k in keys:
-            data[k] = float(data[k]) if data[k] is not None else None
-
-    @staticmethod
-    def _strip_whitespace(data: dict, *keys) -> None:
-        """
-        Strip whitespace from a set of values if applicable
-        """
-        for k in keys:
-            data[k] = data[k].strip() if data[k] is not None and type(
-                data[k]) == str else data[k]
+        return catalog
 
     def _retrieve_smiley_data(self) -> None:
         """
