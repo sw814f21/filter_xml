@@ -1,6 +1,7 @@
 import unittest
 import os
 
+from datetime import datetime
 from filter_xml.temp_file import TempFile
 from filter_xml.catalog import Restaurant
 
@@ -18,6 +19,7 @@ class TempFileTest(unittest.TestCase):
         self.temp_file = TempFile()
         data = Restaurant()
         data.name_seq_nr = '4321'
+        data.start_date = datetime.now()
 
         self.temp_file.add_data(data)
 
@@ -25,10 +27,13 @@ class TempFileTest(unittest.TestCase):
         self.temp_file = TempFile()
         row1 = Restaurant()
         row1.name_seq_nr = '123'
+        row1.start_date = datetime.now()
         row2 = Restaurant()
         row2.name_seq_nr = '456'
+        row2.start_date = datetime.now()
         row3 = Restaurant()
         row3.name_seq_nr = '789'
+        row3.start_date = datetime.now()
         self.temp_file.add_data(row1)
         self.temp_file.add_data(row2)
         self.temp_file.add_data(row3)
