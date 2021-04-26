@@ -40,7 +40,8 @@ class Blacklist:
         """
         Close the blacklist file
         """
-        cls._file.close()
+        if cls._file:
+            cls._file.close()
 
     @classmethod
     def _write_to_file(cls, seq_nr):
