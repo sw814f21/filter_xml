@@ -15,6 +15,7 @@ class Blacklist:
     """
     _file_path = 'blacklist.csv'
     _restaurants = []
+    _file_read = False
 
     @classmethod
     def add(cls, restaurant: dict) -> None:
@@ -26,6 +27,11 @@ class Blacklist:
         """
         Write processed restaurants to file processed_companies.csv
         """
+
+        # Ensure file has been read so to also outut previous entries
+        if not cls._file_read:
+            cls.read_restaurants_file()
+
         with open(cls._file_path, 'w+') as f:
             writer = csv.writer(f)
 
@@ -37,6 +43,7 @@ class Blacklist:
         """
         Retrieve all previously processed restaurants
         """
+        cls._file_read = True
         try:
             with open(cls._file_path, 'r') as f:
                 reader = csv.reader(f)
