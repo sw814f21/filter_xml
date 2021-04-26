@@ -15,6 +15,11 @@ class Restaurant:
                    ['tredjeseneste_kontrol', 'tredjeseneste_kontrol_dato'],
                    ['fjerdeseneste_kontrol', 'fjerdeseneste_kontrol_dato']]
 
+    COMP_KEYS = ['cvrnr', 'pnr', 'region', 'industry_code', 'industry_text', 'start_date',
+                 'city', 'elite_smiley', 'geo_lat', 'geo_lng', 'franchise_name',
+                 'niche_industry', 'url', 'address', 'name', 'zip_code', 'ad_protection',
+                 'company_type']
+
     def __init__(self):
         self.cvrnr = None  # type: Optional[str]
         self.pnr = None  # type: Optional[str]
@@ -35,6 +40,17 @@ class Restaurant:
         self.zip_code = None  # type: Optional[str]
         self.ad_protection = None  # type: Optional[str]
         self.company_type = None  # type: Optional[str]
+        self.franchise_name = None  # type: Optional[str]
+
+    def __eq__(self, other: Restaurant):
+        for k in self.COMP_KEYS:
+            if getattr(self, k) != getattr(other, k):
+                return False
+
+            for new, old in zip(self.smiley_reports, other.smiley_reports):
+                if new != old:
+                    return False
+        return True
 
     @classmethod
     def from_xml(cls, row: dict):
@@ -60,6 +76,7 @@ class Restaurant:
         self.zip_code = row['postnr']
         self.ad_protection = row['reklame_beskyttelse']
         self.company_type = row['virksomhedstype']
+        self.franchise_name = row['Kaedenavn']
 
         return self
 
@@ -86,6 +103,7 @@ class Restaurant:
         self.zip_code = row['zip_code']
         self.ad_protection = row['ad_protection']
         self.company_type = row['company_type']
+        self.franchise_name = row['franchise_name']
 
         return self
 
@@ -103,15 +121,22 @@ class Restaurant:
         return d
 
     def has_update(self, old: Restaurant) -> bool:
-        pass
+        return self != old
 
 
 class SmileyReport:
+    COMP_KEYS = ['report_id', 'smiley', 'date']
 
     def __init__(self):
         self.report_id = None  # type: Optional[str]
         self.smiley = None  # type: Optional[int]
         self.date = None  # type: Optional[datetime]
+
+    def __eq__(self, other: SmileyReport):
+        for k in self.COMP_KEYS:
+            if getattr(self, k) != getattr(other, k):
+                return False
+        return True
 
     @classmethod
     def from_xml(cls, smiley: int, date: str):
@@ -151,6 +176,12 @@ class RestaurantCatalog:
         # maintain the size of the catalog in add() and remove() to avoid using len()
         self.catalog_size = 0
 
+        # these should only be properly assigned in self.setup_diff()
+        self.old_ids = set()
+        self.old_by_key = dict()
+        self.new_ids = set()
+        self.new_by_key = dict()
+
     def add(self, restaurant: Restaurant):
         self.catalog.append(restaurant)
         self.catalog_size += 1
@@ -159,17 +190,18 @@ class RestaurantCatalog:
         self.catalog.extend(restaurants)
         self.catalog_size += len(restaurants)
 
-    def remove(self, restaurant: Restaurant):
-        pass
-
-    def remove_many(self, restaurants: list):
-        pass
+    def setup_diff(self, current_db: RestaurantCatalog):
+        self.new_by_key = {res.name_seq_nr: res for res in self.catalog}
+        self.new_ids = set(self.new_by_key.keys())
+        self.old_by_key = {res.name_seq_nr: res for res in current_db.catalog}
+        self.old_ids = set(self.old_by_key.keys())
 
     def insert_set(self) -> list:
-        pass
+        return [self.new_by_key[x] for x in self.new_ids.difference(self.old_ids)]
 
     def update_set(self) -> list:
-        pass
+        return [self.new_by_key[x] for x in self.new_ids.intersection(self.old_ids)
+                if self.new_by_key[x] != self.old_by_key[x]]
 
     def delete_set(self) -> list:
-        pass
+        return list(self.old_ids.difference(self.new_ids))
