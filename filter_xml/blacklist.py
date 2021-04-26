@@ -24,27 +24,15 @@ class Blacklist:
         Add a resturant to the blacklist and write it to the file
         """
         seq_nr = restaurant['navnelbnr']
-        cls._restaurants.append(seq_nr)
         cls._write_to_file(seq_nr)
-    
-    @classmethod
-    def read_restaurants_file(cls):
-        """
-        Retrieve all blacklisted restaurants from the blacklist file
-        """
-        try:
-            with open(cls._file_path, 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    cls._restaurants.append(row[0])
-        except FileNotFoundError:
-            return {}
 
     @classmethod
     def contains(cls, seq_nr):
         """
         Check if blacklist contains entry with given sequence number
         """
+        if not cls._restaurants:
+            cls._read_restaurants_file()
         return seq_nr in cls._restaurants
 
     @classmethod
@@ -62,3 +50,16 @@ class Blacklist:
         
         cls._file_writer.writerow([seq_nr])
         cls._file.flush()
+
+    @classmethod
+    def _read_restaurants_file(cls):
+        """
+        Retrieve all blacklisted restaurants from the blacklist file
+        """
+        try:
+            with open(cls._file_path, 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    cls._restaurants.append(row[0])
+        except FileNotFoundError:
+            return {}

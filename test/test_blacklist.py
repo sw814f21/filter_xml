@@ -28,8 +28,6 @@ class BlacklistTest(unittest.TestCase):
         restaurant = {'navnelbnr': '1234'}
         Blacklist.add(restaurant)
         self.reset_blacklist_state()
-
-        Blacklist.read_restaurants_file()
        
         self.assertTrue(Blacklist.contains('1234'))
 
@@ -40,7 +38,6 @@ class BlacklistTest(unittest.TestCase):
         Blacklist.add(restaurant1)
         self.reset_blacklist_state()
         Blacklist.add(restaurant2)
-        Blacklist.read_restaurants_file()
 
         self.assertTrue(Blacklist.contains('1234'))
         self.assertTrue(Blacklist.contains('4321'))
