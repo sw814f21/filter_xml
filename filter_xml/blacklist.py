@@ -13,23 +13,23 @@ class Blacklist:
     every restaurant for which we have already collected external CVR data. The file is updated
     after every ended session.
     """
-    file_path = 'blacklist.csv'
-    restaurants = []
+    _file_path = 'blacklist.csv'
+    _restaurants = []
 
     @classmethod
     def add(cls, restaurant: dict) -> None:
         seq_nr = restaurant['navnelbnr']
-        cls.restaurants.append(seq_nr)
+        cls._restaurants.append(seq_nr)
 
     @classmethod
     def output_to_file(cls) -> None:
         """
         Write processed restaurants to file processed_companies.csv
         """
-        with open(cls.file_path, 'w+') as f:
+        with open(cls._file_path, 'w+') as f:
             writer = csv.writer(f)
 
-            for seq_nr in cls.restaurants:
+            for seq_nr in cls._restaurants:
                 writer.writerow([seq_nr])
 
     @classmethod
@@ -38,9 +38,16 @@ class Blacklist:
         Retrieve all previously processed restaurants
         """
         try:
-            with open(cls.file_path, 'r') as f:
+            with open(cls._file_path, 'r') as f:
                 reader = csv.reader(f)
                 for row in reader:
-                    cls.restaurants.append(row[0])
+                    cls._restaurants.append(row[0])
         except FileNotFoundError:
             return {}
+
+    @classmethod
+    def contains(cls, seq_nr):
+        """
+        Check if blacklist contains entry with given sequence number
+        """
+        return seq_nr in cls._restaurants

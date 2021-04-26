@@ -45,7 +45,7 @@ class PreFilters(Filters):
 
     @ staticmethod
     def filter_blacklisted(data: dict) -> bool:
-        res = data['navnelbnr'] not in Blacklist.restaurants
+        res = not Blacklist.contains(data['navnelbnr'])
         print(f'not in blacklist: {res}')
         return res
 
