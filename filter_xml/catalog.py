@@ -197,10 +197,10 @@ class RestaurantCatalog:
         self.old_ids = set(self.old_by_key.keys())
 
     def insert_set(self) -> list:
-        return [self.new_by_key[x] for x in self.new_ids.difference(self.old_ids)]
+        return [self.new_by_key[x].as_dict() for x in self.new_ids.difference(self.old_ids)]
 
     def update_set(self) -> list:
-        return [self.new_by_key[x] for x in self.new_ids.intersection(self.old_ids)
+        return [self.new_by_key[x].as_dict() for x in self.new_ids.intersection(self.old_ids)
                 if self.new_by_key[x] != self.old_by_key[x]]
 
     def delete_set(self) -> list:
