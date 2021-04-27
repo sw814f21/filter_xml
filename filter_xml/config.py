@@ -39,3 +39,10 @@ class FilterXMLConfig:
         Retrieves cvrapi API key from config file
         """
         return cls.open_config().get('cvrapi', 'api_key')
+
+    @classmethod
+    def data_endpoint(cls) -> str:
+        """
+        Retrieves the data endpoint from config file
+        """
+        return cls.open_config().get('filter_xml', 'data_endpoint')

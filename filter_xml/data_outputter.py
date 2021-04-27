@@ -3,6 +3,7 @@ import requests
 from requests.exceptions import ConnectionError
 from typing import Union
 from filter_xml.catalog import RestaurantCatalog, Restaurant
+from filter_xml.config import FilterXMLConfig
 
 
 class _BaseDataOutputter:
@@ -114,7 +115,7 @@ class FileOutputter(_BaseDataOutputter):
 
 
 class DatabaseOutputter(_BaseDataOutputter):
-    ENDPOINT = 'https://127.0.0.1/admin/load'
+    ENDPOINT = FilterXMLConfig.data_endpoint()
 
     def get(self) -> RestaurantCatalog:
         """
