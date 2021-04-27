@@ -27,7 +27,7 @@ class Blacklist:
         cls._write_to_file(seq_nr)
 
     @classmethod
-    def contains(cls, seq_nr):
+    def contains(cls, seq_nr: str):
         """
         Check if blacklist contains entry with given sequence number
         """
@@ -44,7 +44,10 @@ class Blacklist:
             cls._file.close()
 
     @classmethod
-    def _write_to_file(cls, seq_nr):
+    def _write_to_file(cls, seq_nr: str):
+        """
+        Write the given sequence number to blacklist file
+        """
         if not cls._file_writer:
             cls._file = open(cls._file_path, 'a+')
             cls._file_writer = csv.writer(cls._file)
