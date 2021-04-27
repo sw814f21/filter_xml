@@ -10,3 +10,4 @@ filter_log.json
 smiley_json_processed_delete.json
 smiley_json_processed_insert.json
 smiley_json_processed_update.json
+blacklist.csv
