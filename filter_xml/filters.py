@@ -2,6 +2,7 @@ import json
 import os
 
 from typing import List, Callable, Dict
+from filter_xml.catalog import Restaurant
 
 
 class FilterLog:
@@ -122,22 +123,21 @@ class PreFilters(Filters):
             cls.LOGGER[key] = value
 
     @ classmethod
-    def filter_null_control(cls, data: dict) -> bool:
+    def filter_null_control(cls, data: Restaurant) -> bool:
         """
         Checks if row 'data' has received at least 1 control check.
         """
-        res = 'seneste_kontrol' in data.keys() and data['seneste_kontrol'] is not None
+        res = len(data.smiley_reports) > 0
         if not res:
             cls.LOG['null_control'] += 1
         return res
 
     @ classmethod
-    def filter_null_coordinates(cls, data: dict) -> bool:
+    def filter_null_coordinates(cls, data: Restaurant) -> bool:
         """
         Checks if row 'data' has valid coordinates.
         """
-        res = 'Geo_Lat' in data.keys() and data['Geo_Lat'] is not None \
-              and 'Geo_Lng' in data.keys() and data['Geo_Lng'] is not None
+        res = data.geo_lat is not None and data.geo_lng is not None
         if not res:
             cls.LOG['null_coordinates'] += 1
         return res
@@ -159,12 +159,12 @@ class PostFilters(Filters):
         self.LOGGER['industry_code'] = 0
 
     @classmethod
-    def filter_industry_codes(cls, data: dict) -> bool:
+    def filter_industry_codes(cls, data: Restaurant) -> bool:
         """
         Checks if row 'data' has a valid industry code.
         """
         include_codes = ['561010', '561020', '563000']
-        res = 'industry_code' in data.keys() and data['industry_code'] in include_codes
+        res = data.industry_code in include_codes
         print(f'valid industry code: {res}')
         if not res:
             cls.LOGGER['industry_code'] += 1

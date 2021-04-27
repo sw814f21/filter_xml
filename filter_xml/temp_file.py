@@ -1,6 +1,7 @@
-import json
 import os
 import csv
+
+from filter_xml.catalog import Restaurant, RestaurantCatalog
 
 
 class TempFile:
@@ -39,10 +40,10 @@ class TempFile:
         """
         fieldnames = list(data_example.keys())
 
-        if 'navnelbnr' not in fieldnames:
+        if 'name_seq_nr' not in fieldnames:
             self.close()
             raise ValueError(
-                'Expected "navnelbnr" field to be provided in data example')
+                'Expected "name_seq_nr" field to be provided in data example')
 
         return csv.DictWriter(
             self.__file, fieldnames=fieldnames, extrasaction='ignore', delimiter=";")
@@ -54,26 +55,23 @@ class TempFile:
         reader = csv.DictReader(self.__file, delimiter=";")
         out = dict()
         for entry in reader:
-            entry['smiley_reports'] = json.loads(entry['smiley_reports'])
-            out[entry['navnelbnr']] = entry
+            entry = Restaurant.from_json(entry)
+            out[entry.name_seq_nr] = entry
         return out
 
-    def add_data(self, data: dict):
+    def add_data(self, data: Restaurant):
         """
         Write a single row to temp file and commit
         """
-        if 'navnelbnr' not in data:
+        if not data.name_seq_nr:
             self.close()
-            raise ValueError('Expected data to have "navnelbnr" key')
+            raise ValueError('Expected data to have "name_seq_nr" key')
 
         if not self.__file_writer:
-            self.__create_file(data)
+            self.__create_file(data.as_dict())
 
-        dataCopy = data.copy()
-        dataCopy['smiley_reports'] = json.dumps(dataCopy['smiley_reports'])
-
-        self.__data[data['navnelbnr']] = data
-        self.__file_writer.writerow(dataCopy)
+        self.__data[data.name_seq_nr] = data
+        self.__file_writer.writerow(data.as_dict())
         self.__file.flush()
 
     def close(self) -> None:
@@ -89,8 +87,10 @@ class TempFile:
         """
         return bool(self.__data.get(seq_nr))
 
-    def get_all(self) -> list:
+    def get_all(self) -> RestaurantCatalog:
         """
         Retrieve all restaurants in file as a list
         """
-        return list(self.__data.values())
+        catalog = RestaurantCatalog()
+        catalog.add_many(list(self.__data.values()))
+        return catalog
