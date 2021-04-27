@@ -111,12 +111,14 @@ class PreFilters(Filters):
     """
     LOG = {
         'null_control': 0,
-        'null_coordinates': 0
+        'null_coordinates': 0,
+        'blacklisted': 0
     }
 
     def __init__(self):
         self.LOGGER['null_control'] = 0
         self.LOGGER['null_coordinates'] = 0
+        self.LOGGER['blacklisted'] = 0
 
     @classmethod
     def log_pre_filters(cls):
@@ -143,10 +145,11 @@ class PreFilters(Filters):
             cls.LOG['null_coordinates'] += 1
         return res
 
-    @ staticmethod
-    def filter_blacklisted(data: dict) -> bool:
-        res = not Blacklist.contains(data['navnelbnr'])
-        print(f'not in blacklist: {res}')
+    @ classmethod
+    def filter_blacklisted(cls, data: Restaurant) -> bool:
+        res = not Blacklist.contains(data.name_seq_nr)
+        if not res:
+            cls.LOG['blacklisted'] += 1
         return res
 
 
