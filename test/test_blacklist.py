@@ -10,6 +10,7 @@ class BlacklistTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        cls.reset_blacklist_state()
         if os.path.exists(FILENAME):
             os.remove(FILENAME)
 
@@ -48,8 +49,10 @@ class BlacklistTest(unittest.TestCase):
         self.assertTrue(Blacklist.contains('4321'))
 
 
-    def reset_blacklist_state(self):
+    @classmethod
+    def reset_blacklist_state(cls):
         Blacklist._restaurants = []
         Blacklist._file_path = FILENAME
         Blacklist._file_writer = None
+        Blacklist.close_file()
         Blacklist._file = None
