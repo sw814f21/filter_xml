@@ -19,7 +19,7 @@ class Blacklist:
     _file = None
 
     @classmethod
-    def add(cls, restaurant: Restaurant()) -> None:
+    def add(cls, restaurant: Restaurant) -> None:
         """
         Add a resturant to the blacklist and write it to the file
         """
