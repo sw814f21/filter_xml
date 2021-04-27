@@ -60,7 +60,7 @@ class DataProcessor:
             if restaurant.is_valid_production_unit():
 
                 # then ensure it hasn't already been processed prior to a crash
-                if not temp_file.contains(restaurant['navnelbnr']):
+                if not temp_file.contains(restaurant.name_seq_nr):
 
                     # only sleep if --no-scrape is not passed, and if our cvr provider requests it.
                     if not self._skip_scrape and self._cvr_handler.SHOULD_SLEEP and row_index > 0:
