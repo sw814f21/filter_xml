@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 from filter_xml.config import FilterXMLConfig
+from filter_xml.catalog import Restaurant
 
 
 class CVRHandlerBase:
@@ -23,7 +24,7 @@ class CVRHandlerBase:
                           if callable(getattr(self.__class__, fun))
                           and fun.startswith('append_')]
 
-    def collect_data(self, data: dict) -> dict:
+    def collect_data(self, data: Restaurant) -> Restaurant:
         """
         Data collection method. All inherited classes should override this and return a super() call
         """
@@ -41,7 +42,7 @@ class CVRHandlerVirk(CVRHandlerBase):
     def __init__(self):
         super().__init__()
 
-    def collect_data(self, data: dict) -> None:
+    def collect_data(self, data: Restaurant) -> None:
         raise NotImplementedError(f'{self.__class__} not yet implemented')
 
 
@@ -56,7 +57,7 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
     def __init__(self):
         super().__init__()
 
-    def collect_data(self, data: dict) -> dict:
+    def collect_data(self, data: Restaurant) -> Restaurant:
         """
         Retrieve data from cvrapi and modify the data through every class method prefixed by
         'append_'.
@@ -66,9 +67,9 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
             '<company_name> - <project_name> - <contact_name> [<contact_phone_or_email>]'
         """
         print('-' * 40)
-        print(f'{data["navn1"]} | {data["pnr"]}')
+        print(f'{data.name} | {data.pnr}')
         params = {
-            'produ': data["pnr"],
+            'produ': data.pnr,
             'country': 'dk',
             'token': FilterXMLConfig.cvrapi_api_key()
         }
@@ -86,24 +87,21 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
         return super().collect_data(data)
 
     @staticmethod
-    def append_cvrapi_industry_code(content: json, row: dict) -> dict:
+    def append_cvrapi_industry_code(content: json, row: Restaurant) -> Restaurant:
         """
         Append industry code and description to the row from JSON content, and delete the old
         industry fields.
         """
-        row['industry_code'] = str(content['industrycode'])
-        row['industry_text'] = content['industrydesc']
-        del row['branche']
-        del row['brancheKode']
+        row.industry_code = str(content['industrycode'])
+        row.industry_text = content['industrydesc']
         return row
 
     @staticmethod
-    def append_cvrapi_start_date(content: json, row: dict) -> dict:
+    def append_cvrapi_start_date(content: json, row: Restaurant) -> Restaurant:
         """
         Append company start date formatted as ISO 8601
         """
-        date = datetime.strptime(content['startdate'], '%d/%m - %Y')
-        row['start_date'] = date.strftime(FilterXMLConfig.iso_fmt())
+        row.start_date = datetime.strptime(content['startdate'], '%d/%m - %Y')
         return row
 
 
@@ -123,18 +121,18 @@ class CVRHandlerScrape(CVRHandlerBase):
     def __init__(self):
         super().__init__()
 
-    def collect_data(self, data: dict) -> dict:
+    def collect_data(self, data: Restaurant) -> Restaurant:
         """
         Collect HTML soup for the given row, and modify the row through every class method
         prefixed by 'append_'
         """
         print('-' * 40)
-        print(f'{data["navn1"]} | {data["pnr"]}')
+        print(f'{data.name} | {data.pnr}')
         params = {
             'enhedstype': 'produktionsenhed',
-            'id': data['pnr'],
+            'id': data.pnr,
             'language': 'da',
-            'soeg': data['pnr'],
+            'soeg': data.pnr,
         }
 
         print(f'{self.URL} | {params}')
@@ -147,7 +145,7 @@ class CVRHandlerScrape(CVRHandlerBase):
         return super().collect_data(data)
 
     @staticmethod
-    def append_cvr_industry_code(soup: BeautifulSoup, row: dict) -> dict:
+    def append_cvr_industry_code(soup: BeautifulSoup, row: Restaurant) -> Restaurant:
         """
         Appends industry code and text from datacvr.virk.dk to a row
         """
@@ -156,20 +154,16 @@ class CVRHandlerScrape(CVRHandlerBase):
         if industry_elem:
             industry_elem = industry_elem.parent.parent.parent
             industry = list(industry_elem.children)[3].text.strip()
-            row['industry_code'] = industry.split()[0]
-            row['industry_text'] = industry.replace(
-                row['industry_code'], '').strip()
-            print(f'code: {row["industry_code"]}: {row["industry_text"]}')
+            row.industry_code = industry.split()[0]
+            row.industry_text = industry.replace(row.industry_code, '').strip()
+            print(f'code: {row.industry_code}: {row.industry_text}')
         else:
-            row['industry_code'] = row['industry_text'] = None
-
-        del row['branche']
-        del row['brancheKode']
+            row.industry_code = row.industry_text = None
 
         return row
 
     @staticmethod
-    def append_cvr_start_date(soup: BeautifulSoup, row: dict) -> dict:
+    def append_cvr_start_date(soup: BeautifulSoup, row: Restaurant) -> Restaurant:
         """
         Appends start date from datacvr.virk.dk to a row
         """
@@ -181,10 +175,10 @@ class CVRHandlerScrape(CVRHandlerBase):
                 list(start_date_elem.children)[3].text.strip(),
                 '%d.%m.%Y'
             )
-            row['start_date'] = date.strftime(FilterXMLConfig.iso_fmt())
-            print(f'date: {row["start_date"]}')
+            row.start_date = date
+            print(f'date: {row.start_date}')
         else:
-            row['start_date'] = None
+            row.start_date = None
 
         return row
 
@@ -218,12 +212,12 @@ class FindSmileyHandler:
                           if callable(getattr(self.__class__, fun))
                           and fun.startswith('append_')]
 
-    def collect_data(self, data: dict) -> dict:
+    def collect_data(self, data: Restaurant) -> Restaurant:
         """
         Data collection method. Retrieves findsmiley.dk page for the given company and runs
         every appender on it.
         """
-        smiley = get(data['URL'])
+        smiley = get(data.url)
         smiley_soup = BeautifulSoup(smiley.content.decode('utf-8'), 'html.parser')
 
         for appender in self.appenders:
@@ -232,43 +226,19 @@ class FindSmileyHandler:
         return data
 
     @staticmethod
-    def append_smiley_reports(soup: BeautifulSoup, row: dict) -> dict:
+    def append_smiley_reports(soup: BeautifulSoup, row: Restaurant) -> Restaurant:
         """
-        Append smiley reports from findsmiley.dk for the given row as a list of dicts on the form:
-            {
-                report_id: str
-                smiley: int
-                date: str
-            }
+        Append smiley report IDs from findsmiley.dk for the given row
         """
         tags = soup.findAll('a', attrs={'target': '_blank'})
-        keys = ['seneste_kontrol', 'naestseneste_kontrol', 'tredjeseneste_kontrol',
-                'fjerdeseneste_kontrol']
-        reports = []
 
         # we assume that pdfs will continue to appear in descending order
         # if we want safe guarding against changes in order we can use
         # date = t.find('p', attrs={'class': 'DateText'}).text
         # and check the date against the fields of param: row
-        for tag, key in zip(tags, keys):
-            if row[key]:
+        for tag, report in zip(tags, row.smiley_reports):
+            if report:
                 url = tag.attrs['href']
-                date = datetime.strptime(
-                    row[f'{key}_dato'],
-                    '%d-%m-%Y %H:%M:%S'
-                )
-
-                d = {
-                    'report_id': url.split('?')[1],
-                    'smiley': row[key],
-                    'date': date.strftime(FilterXMLConfig.iso_fmt())
-                }
-
-                reports.append(d)
-
-                del row[key]
-                del row[f'{key}_dato']
-
-        row['smiley_reports'] = reports
+                report.report_id = url.split('?')[1]
 
         return row

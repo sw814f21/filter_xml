@@ -6,6 +6,7 @@ from filter_xml.temp_file import TempFile
 from filter_xml.blacklist import Blacklist
 from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
 from filter_xml.filters import PostFilters
+from filter_xml.catalog import RestaurantCatalog
 
 
 class DataProcessor:
@@ -23,7 +24,7 @@ class DataProcessor:
         # collect all class methods prefixed by 'filter_'
         self.post_filters = PostFilters().filters()
 
-    def process_smiley_json(self, data: list) -> None:
+    def process_smiley_json(self, data: RestaurantCatalog) -> None:
         """
         Processes smiley .json file.
             Includes only production units
@@ -39,25 +40,24 @@ class DataProcessor:
 
         Once data has been processed, keys are renamed. Cf. the translation map in _rename_keys()
         """
-        # TODO: use outputter.get to get all restaurants from database
 
         temp_file = TempFile()
 
         res = temp_file.get_all()
 
-        total_rows = len(data)
+        total_rows = data.catalog_size
         row_index = 0
 
-        for restaurant in data:
+        for restaurant in data.catalog:
             # we use this to avoid using the same fallback in three separate if statements
             row_kept = False
 
             # if sample size CLI arg is supplied, stop when its reached
-            if self._sample_size and len(res) >= self._sample_size:
+            if self._sample_size and res.catalog_size >= self._sample_size:
                 break
 
             # first check if the restaurant is valid
-            if self.valid_production_unit(restaurant):
+            if restaurant.is_valid_production_unit():
 
                 # then ensure it hasn't already been processed prior to a crash
                 if not temp_file.contains(restaurant['navnelbnr']):
@@ -74,7 +74,7 @@ class DataProcessor:
                     # check filters to see if we should keep the row
                     # otherwise add it to blacklist so we don't scrape it next time
                     if all([filter_(restaurant) for filter_ in self.post_filters]):
-                        res.append(restaurant)
+                        res.add(restaurant)
                         row_kept = True
                     else:
                         Blacklist.add(restaurant)
@@ -87,67 +87,18 @@ class DataProcessor:
                 total_rows -= 1
 
             if self._sample_size:
-                print(f'Collected {len(res)} of {self._sample_size} samples')
+                print(f'Collected {res.catalog_size} of {self._sample_size} samples')
             else:
-                print(f'{total_rows - len(res)} rows to go')
+                print(f'{total_rows - res.catalog_size} rows to go')
 
             row_index += 1
 
         temp_file.close()
         Blacklist.close_file()
 
-        res = self._rename_keys(res)
-
         token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
+        res.setup_diff(self._outputter.get())
 
-        # TODO: split output into outputter.insert, -.update, and -.delete
-        self._outputter.insert(res, token)
-
-    @ staticmethod
-    def _has_cvr(row: dict) -> bool:
-        """
-        Check if a smiley data row has a CVR number
-        """
-        return 'cvrnr' in row.keys() and row['cvrnr'] is not None
-
-    @ staticmethod
-    def _has_pnr(row: dict) -> bool:
-        """
-        Check if a smiley data row has a p-number
-        """
-        return 'pnr' in row.keys() and row['pnr'] is not None
-
-    @staticmethod
-    def _rename_keys(data: list) -> list:
-        """
-        Rename keys in each row.
-        """
-        trans = {
-            'By': 'city',
-            'Elite_Smiley': 'elite_smiley',
-            'Geo_Lat': 'geo_lat',
-            'Geo_Lng': 'geo_lng',
-            'Kaedenavn': 'franchise_name',
-            'Pixibranche': 'niche_industry',
-            'URL': 'url',
-            'adresse1': 'address',
-            'navn1': 'name',
-            'navnelbnr': 'name_seq_nr',
-            'postnr': 'zip_code',
-            'reklame_beskyttelse': 'ad_protection',
-            'virksomhedstype': 'company_type'
-        }
-
-        for row in data:
-            for key, _trans in trans.items():
-                row[_trans] = row[key]
-                del row[key]
-
-        return data
-
-    def valid_production_unit(self, restaurant: dict) -> bool:
-        """
-        Check if a restaurant is a valid production unit, by checking if they have both a
-        p-number and a CVR number.
-        """
-        return self._has_pnr(restaurant) and self._has_cvr(restaurant)
+        self._outputter.insert(res.insert_set(), token)
+        self._outputter.update(res.update_set(), token)
+        self._outputter.delete(res.delete_set(), token)

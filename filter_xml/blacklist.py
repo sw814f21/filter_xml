@@ -1,8 +1,8 @@
 import csv
-
 from datetime import datetime
 from typing import List
 from filter_xml.config import FilterXMLConfig
+from filter_xml.catalog import Restaurant
 
 
 class Blacklist:
@@ -19,11 +19,11 @@ class Blacklist:
     _file = None
 
     @classmethod
-    def add(cls, restaurant: dict) -> None:
+    def add(cls, restaurant: Restaurant()) -> None:
         """
         Add a resturant to the blacklist and write it to the file
         """
-        seq_nr = restaurant['navnelbnr']
+        seq_nr = restaurant.name_seq_nr
         cls._write_to_file(seq_nr)
 
     @classmethod
