@@ -73,10 +73,12 @@ class DataProcessor:
                     # only collect data if we haven't passed --no-scrape
                     if not self._skip_scrape:
                         restaurant = self._cvr_handler.collect_data(restaurant)
-                        restaurant = self._smiley_handler.collect_data(restaurant)
 
                     # check filters to see if we should keep the row
                     if all([filter_(restaurant) for filter_ in self.post_filters.filters()]):
+                        if not self._skip_scrape:
+                            restaurant = self._smiley_handler.collect_data(restaurant)
+
                         res.add(restaurant)
                         row_kept = True
 
