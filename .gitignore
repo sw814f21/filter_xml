@@ -7,3 +7,6 @@ smiley_json_processed.json
 smiley_xml.xml
 config.ini
 filter_log.json
+smiley_json_processed_delete.json
+smiley_json_processed_insert.json
+smiley_json_processed_update.json
