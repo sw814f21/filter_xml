@@ -110,7 +110,7 @@ class Restaurant:
         self.region = row['region']
         self.industry_code = row['industry_code']
         self.industry_text = row['industry_text']
-        self.start_date = row['start_date']
+        self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt())
         self.smiley_reports = [SmileyReport.from_json(report)
                                for report in json.loads(row['smiley_reports'])]
         self.city = row['city']
