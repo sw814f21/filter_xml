@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 
 from filter_xml.catalog import Restaurant, RestaurantCatalog
 
@@ -18,35 +19,35 @@ class TempFile:
     def __init__(self) -> None:
         file_exists = os.path.exists(self.FILE_NAME)
         read_append = 'r+' if file_exists else 'a+'
+        field_names = list(vars(Restaurant()).keys())
 
         self.__data = dict()
         self.__file = open(self.FILE_NAME, read_append)
-        self.__file_writer = None
+        self.__file_writer = self.__get_file_writer(field_names)
 
         if file_exists:
             self.__data = self.__read_temp_data()
+        else:
+            self.__create_file()
 
-    def __create_file(self, data_example: dict) -> None:
+    def __create_file(self) -> None:
         """
         Create temp file with headers from keys in provided data_example
         """
-        self.__file_writer = self.__get_file_writer(data_example)
         self.__file_writer.writeheader()
         self.__file.flush()
 
-    def __get_file_writer(self, data_example: dict) -> csv.DictWriter:
+    def __get_file_writer(self, field_names: list) -> csv.DictWriter:
         """
         Construct file writer
         """
-        fieldnames = list(data_example.keys())
-
-        if 'name_seq_nr' not in fieldnames:
+        if 'name_seq_nr' not in field_names:
             self.close()
             raise ValueError(
                 'Expected "name_seq_nr" field to be provided in data example')
 
         return csv.DictWriter(
-            self.__file, fieldnames=fieldnames, extrasaction='ignore', delimiter=";")
+            self.__file, fieldnames=field_names, extrasaction='ignore', delimiter=";")
 
     def __read_temp_data(self) -> dict:
         """
@@ -67,11 +68,10 @@ class TempFile:
             self.close()
             raise ValueError('Expected data to have "name_seq_nr" key')
 
-        if not self.__file_writer:
-            self.__create_file(data.as_dict())
-
         self.__data[data.name_seq_nr] = data
-        self.__file_writer.writerow(data.as_dict())
+        data = data.as_dict().copy()
+        data['smiley_reports'] = json.dumps(data['smiley_reports'])
+        self.__file_writer.writerow(data)
         self.__file.flush()
 
     def close(self) -> None:

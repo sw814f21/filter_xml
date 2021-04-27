@@ -22,7 +22,7 @@ class DataProcessor:
         self._outputter = outputter
 
         # collect all class methods prefixed by 'filter_'
-        self.post_filters = PostFilters().filters()
+        self.post_filters = PostFilters()
 
     def process_smiley_json(self, data: RestaurantCatalog) -> None:
         """
@@ -73,7 +73,7 @@ class DataProcessor:
 
                     # check filters to see if we should keep the row
                     # otherwise add it to blacklist so we don't scrape it next time
-                    if all([filter_(restaurant) for filter_ in self.post_filters]):
+                    if all([filter_(restaurant) for filter_ in self.post_filters.filters()]):
                         res.add(restaurant)
                         row_kept = True
                     else:

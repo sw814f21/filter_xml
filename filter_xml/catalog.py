@@ -2,6 +2,7 @@
 # so we need to import future annotations to allow this
 # note that __future__ imports must be the first line of the file
 from __future__ import annotations
+import json
 
 from typing import Optional, List, Set, Dict
 from datetime import datetime
@@ -110,7 +111,8 @@ class Restaurant:
         self.industry_code = row['industry_code']
         self.industry_text = row['industry_text']
         self.start_date = row['start_date']
-        self.smiley_reports = [SmileyReport.from_json(report) for report in row['smiley_reports']]
+        self.smiley_reports = [SmileyReport.from_json(report)
+                               for report in json.loads(row['smiley_reports'])]
         self.city = row['city']
         self.elite_smiley = row['elite_smiley']
         self.geo_lat = float(row['geo_lat']) if row['geo_lat'] else None

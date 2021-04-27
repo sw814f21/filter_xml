@@ -13,7 +13,7 @@ class SmileyExtractor:
     def __init__(self, file_path: str, should_get_xml: bool):
         self.smiley_xml = file_path
         self.should_get_xml = should_get_xml
-        self.pre_filters = PreFilters().filters()
+        self.pre_filters = PreFilters()
 
     def create_smiley_json(self) -> RestaurantCatalog:
         """
@@ -31,11 +31,12 @@ class SmileyExtractor:
             new_obj = Restaurant.from_xml({col.tag: col.text for col in row})
 
             # run all pre filters and skip if all does not pass
-            if not all([filter_(new_obj) for filter_ in self.pre_filters]):
+            if not all([filter_(new_obj) for filter_ in self.pre_filters.filters()]):
                 continue
 
             catalog.add(new_obj)
 
+        self.pre_filters.log_pre_filters()
         return catalog
 
     def _retrieve_smiley_data(self) -> None:
