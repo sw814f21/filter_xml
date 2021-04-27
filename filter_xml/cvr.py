@@ -76,9 +76,8 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
         headers = {
             'User-Agent': 'sw814f21 - FindSmiley app - Jonas Andersen'
         }
-        a = datetime.now()
+
         res = get(self.URL, params=params, headers=headers)
-        print(f'{(datetime.now()-a).microseconds/1000}')
         content = json.loads(res.content.decode('utf-8'))
 
         if content:
