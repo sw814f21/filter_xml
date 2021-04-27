@@ -2,6 +2,7 @@ import json
 import os
 
 from typing import List, Callable, Dict
+from filter_xml.blacklist import Blacklist
 from filter_xml.catalog import Restaurant
 
 
@@ -140,6 +141,12 @@ class PreFilters(Filters):
         res = data.geo_lat is not None and data.geo_lng is not None
         if not res:
             cls.LOG['null_coordinates'] += 1
+        return res
+
+    @ staticmethod
+    def filter_blacklisted(data: dict) -> bool:
+        res = not Blacklist.contains(data['navnelbnr'])
+        print(f'not in blacklist: {res}')
         return res
 
 
