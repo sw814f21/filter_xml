@@ -75,8 +75,12 @@ class FileOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        put_data = {
+            'timestamp': token,
+            'data': data
+        }
         with open(f'{self.FILE_BASE}insert.json', 'w') as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(put_data, indent=4))
 
     def update(self, data: Union[dict, list], token: str) -> None:
         """
@@ -86,8 +90,12 @@ class FileOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        post_data = {
+            'timestamp': token,
+            'data': data
+        }
         with open(f'{self.FILE_BASE}update.json', 'w') as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(post_data, indent=4))
 
     def delete(self, data: Union[dict, list], token: str) -> None:
         """
@@ -97,8 +105,12 @@ class FileOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        delete_data = {
+            'timestamp': token,
+            'data': data
+        }
         with open(f'{self.FILE_BASE}delete.json', 'w') as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(delete_data, indent=4))
 
 
 class DatabaseOutputter(_BaseDataOutputter):
