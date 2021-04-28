@@ -134,7 +134,7 @@ class Restaurant:
         """
         ISO-8601 formatted start date string property
         """
-        return self.start_date.strftime(FilterXMLConfig.iso_fmt())
+        return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else ''
 
     def is_valid_production_unit(self) -> bool:
         """
