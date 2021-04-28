@@ -95,12 +95,12 @@ class DataProcessor:
 
             row_index += 1
 
-        temp_file.close()
-        Blacklist.close_file()
-
         token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
         res.setup_diff(self._outputter.get())
 
         self._outputter.insert(res.insert_set(), token)
         self._outputter.update(res.update_set(), token)
         self._outputter.delete(res.delete_set(), token)
+
+        temp_file.close()
+        Blacklist.close_file()
