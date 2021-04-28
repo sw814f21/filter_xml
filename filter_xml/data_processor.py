@@ -78,10 +78,9 @@ class DataProcessor:
 
                         res.add(restaurant)
                         row_kept = True
+                        temp_file.add_data(restaurant)
                     else:
                         Blacklist.add(restaurant)
-
-                    temp_file.add_data(restaurant)
 
             # if any check resulted in a row skip, decrement the total row count
             # for terminal output purposes
