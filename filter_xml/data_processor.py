@@ -89,7 +89,8 @@ class DataProcessor:
                 total_rows -= 1
 
             if self._sample_size:
-                print(f'Collected {res.catalog_size} of {self._sample_size} samples')
+                if row_kept:
+                    print(f'Collected {res.catalog_size} of {self._sample_size} samples')
             else:
                 print(f'{total_rows - res.catalog_size} rows to go')
 

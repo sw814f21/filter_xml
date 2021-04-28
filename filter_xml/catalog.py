@@ -81,8 +81,8 @@ class Restaurant:
                                for x in cls.REPORT_KEYS if row[x[0]]]
         self.city = row['By']
         self.elite_smiley = row['Elite_Smiley']
-        self.geo_lat = float(row['Geo_Lat']) if row['Geo_Lat'] else None
-        self.geo_lng = float(row['Geo_Lng']) if row['Geo_Lng'] else None
+        self.geo_lat = row['Geo_Lat'] if row['Geo_Lat'] else None
+        self.geo_lng = row['Geo_Lng'] if row['Geo_Lng'] else None
         self.niche_industry = row['Pixibranche']
         self.url = row['URL']
         self.address = row['adresse1']
@@ -112,11 +112,11 @@ class Restaurant:
         self.industry_text = row['industry_text']
         self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt())
         self.smiley_reports = [SmileyReport.from_json(report)
-                               for report in json.loads(row['smiley_reports'])]
+                               for report in row['smiley_reports']]
         self.city = row['city']
         self.elite_smiley = row['elite_smiley']
-        self.geo_lat = float(row['geo_lat']) if row['geo_lat'] else None
-        self.geo_lng = float(row['geo_lng']) if row['geo_lng'] else None
+        self.geo_lat = row['geo_lat'] if row['geo_lat'] else None
+        self.geo_lng = row['geo_lng'] if row['geo_lng'] else None
         self.niche_industry = row['niche_industry']
         self.url = row['url']
         self.address = row['address']

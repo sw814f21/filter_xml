@@ -126,7 +126,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             res = requests.get(self.ENDPOINT, timeout=4)
             if res.status_code == 200:
                 catalog.add_many([Restaurant.from_json(row)
-                                  for row in json.loads(res.content.decode('utf-8'))])
+                                  for row in res.json()])
         except ConnectionError:
             print('Failed to connect to API')
         return catalog
@@ -139,6 +139,9 @@ class DatabaseOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        if len(data) == 0:
+            return
+
         put_data = {
             'timestamp': token,
             'data': data
@@ -157,6 +160,9 @@ class DatabaseOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        if len(data) == 0:
+            return
+
         post_data = {
             'timestamp': token,
             'data': data
@@ -175,6 +181,9 @@ class DatabaseOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        if len(data) == 0:
+            return
+
         delete_data = {
             'timestamp': token,
             'data': data
