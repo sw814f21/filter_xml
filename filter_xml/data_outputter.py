@@ -143,7 +143,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             'timestamp': token,
             'data': data
         }
-        res = requests.put(self.ENDPOINT, json=json.dumps(put_data))
+        res = requests.put(self.ENDPOINT, json=put_data)
 
         if res.status_code != 200:
             print('Failed to send data to database, writing to file instead')
@@ -161,7 +161,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             'timestamp': token,
             'data': data
         }
-        res = requests.post(self.ENDPOINT, json=json.dumps(post_data))
+        res = requests.post(self.ENDPOINT, json=post_data)
 
         if res.status_code != 200:
             print('Failed to send data to database, writing to file instead')
@@ -179,7 +179,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             'timestamp': token,
             'data': data
         }
-        res = requests.delete(self.ENDPOINT, json=json.dumps(delete_data))
+        res = requests.delete(self.ENDPOINT, json=delete_data)
 
         if res.status_code != 200:
             print('Failed to send data to database, writing to file instead')
