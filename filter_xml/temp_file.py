@@ -56,6 +56,7 @@ class TempFile:
         reader = csv.DictReader(self.__file, delimiter=";")
         out = dict()
         for entry in reader:
+            entry['smiley_reports'] = json.loads(entry['smiley_reports'])
             entry = Restaurant.from_json(entry)
             out[entry.name_seq_nr] = entry
         return out
