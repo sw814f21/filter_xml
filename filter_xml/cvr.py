@@ -80,9 +80,11 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
         res = get(self.URL, params=params, headers=headers)
         content = json.loads(res.content.decode('utf-8'))
 
-        if content:
+        if res.status_code == 200:
             for appender in self.appenders:
                 data = appender(content, data)
+        else:
+            print(f'Skipping restaurant with p-nr {data.pnr}: record not found remotely')
 
         return super().collect_data(data)
 

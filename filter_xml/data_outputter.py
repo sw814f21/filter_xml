@@ -126,7 +126,7 @@ class DatabaseOutputter(_BaseDataOutputter):
             res = requests.get(self.ENDPOINT, timeout=4)
             if res.status_code == 200:
                 catalog.add_many([Restaurant.from_json(row)
-                                  for row in json.loads(res.content.decode('utf-8'))])
+                                  for row in res.json()])
         except ConnectionError:
             print('Failed to connect to API')
         return catalog
@@ -139,14 +139,17 @@ class DatabaseOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        if len(data) == 0:
+            return
+
         put_data = {
             'timestamp': token,
             'data': data
         }
-        res = requests.put(self.ENDPOINT, data=put_data)
+        res = requests.post(self.ENDPOINT, json=put_data)
 
         if res.status_code != 200:
-            print('Failed to send data to database, writing to file instead')
+            print('Failed to send insert data to database, writing to file instead')
             FileOutputter().insert(data, token)
 
     def update(self, data: Union[dict, list], token: str) -> None:
@@ -157,14 +160,17 @@ class DatabaseOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        if len(data) == 0:
+            return
+
         post_data = {
             'timestamp': token,
             'data': data
         }
-        res = requests.post(self.ENDPOINT, data=post_data)
+        res = requests.put(self.ENDPOINT, json=post_data)
 
         if res.status_code != 200:
-            print('Failed to send data to database, writing to file instead')
+            print('Failed to send update data to database, writing to file instead')
             FileOutputter().update(data, token)
 
     def delete(self, data: Union[dict, list], token: str) -> None:
@@ -175,14 +181,17 @@ class DatabaseOutputter(_BaseDataOutputter):
         :param token: an identifier for the current session, to ensure that separate
                       POST / PUT / DELETE requests are recognized as a single version of data
         """
+        if len(data) == 0:
+            return
+
         delete_data = {
             'timestamp': token,
             'data': data
         }
-        res = requests.delete(self.ENDPOINT, data=delete_data)
+        res = requests.delete(self.ENDPOINT, json=delete_data)
 
         if res.status_code != 200:
-            print('Failed to send data to database, writing to file instead')
+            print('Failed to send delete data to database, writing to file instead')
             FileOutputter().delete(data, token)
 
 

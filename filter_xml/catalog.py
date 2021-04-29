@@ -56,9 +56,10 @@ class Restaurant:
             if getattr(self, k) != getattr(other, k):
                 return False
 
-            for new, old in zip(self.smiley_reports, other.smiley_reports):
-                if new != old:
-                    return False
+        for new, old in zip(self.smiley_reports, other.smiley_reports):
+            if new != old:
+                return False
+
         return True
 
     @classmethod
@@ -112,7 +113,7 @@ class Restaurant:
         self.industry_text = row['industry_text']
         self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt())
         self.smiley_reports = [SmileyReport.from_json(report)
-                               for report in json.loads(row['smiley_reports'])]
+                               for report in row['smiley_reports']]
         self.city = row['city']
         self.elite_smiley = row['elite_smiley']
         self.geo_lat = float(row['geo_lat']) if row['geo_lat'] else None
@@ -134,7 +135,7 @@ class Restaurant:
         """
         ISO-8601 formatted start date string property
         """
-        return self.start_date.strftime(FilterXMLConfig.iso_fmt())
+        return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else ''
 
     def is_valid_production_unit(self) -> bool:
         """

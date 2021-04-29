@@ -78,10 +78,9 @@ class DataProcessor:
 
                         res.add(restaurant)
                         row_kept = True
+                        temp_file.add_data(restaurant)
                     else:
                         Blacklist.add(restaurant)
-
-                    temp_file.add_data(restaurant)
 
             # if any check resulted in a row skip, decrement the total row count
             # for terminal output purposes
@@ -89,14 +88,12 @@ class DataProcessor:
                 total_rows -= 1
 
             if self._sample_size:
-                print(f'Collected {res.catalog_size} of {self._sample_size} samples')
+                if row_kept:
+                    print(f'Collected {res.catalog_size} of {self._sample_size} samples')
             else:
                 print(f'{total_rows - res.catalog_size} rows to go')
 
             row_index += 1
-
-        temp_file.close()
-        Blacklist.close_file()
 
         token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
         res.setup_diff(self._outputter.get())
@@ -104,3 +101,6 @@ class DataProcessor:
         self._outputter.insert(res.insert_set(), token)
         self._outputter.update(res.update_set(), token)
         self._outputter.delete(res.delete_set(), token)
+
+        temp_file.close()
+        Blacklist.close_file()
