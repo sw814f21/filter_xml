@@ -56,9 +56,10 @@ class Restaurant:
             if getattr(self, k) != getattr(other, k):
                 return False
 
-            for new, old in zip(self.smiley_reports, other.smiley_reports):
-                if new != old:
-                    return False
+        for new, old in zip(self.smiley_reports, other.smiley_reports):
+            if new != old:
+                return False
+
         return True
 
     @classmethod
