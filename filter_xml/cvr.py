@@ -1,6 +1,6 @@
 import json
 
-from requests import get
+from requests import get, post
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -31,7 +31,7 @@ class CVRHandlerBase:
         return data
 
 
-class CVRHandlerVirk(CVRHandlerBase):
+class CVRHandlerElastic(CVRHandlerBase):
     """
     CVR handler for elastic search on virk.dk. Will be implemented once (if) we get access.
 
@@ -43,8 +43,43 @@ class CVRHandlerVirk(CVRHandlerBase):
         super().__init__()
 
     def collect_data(self, data: Restaurant) -> None:
+
+        data = {
+            'from': 0,
+            'size': 3000,
+            'query': {
+                'terms': {
+                    'VrproduktionsEnhed.pNummer': data.pnr #TODO: Convert to an array of up to 3000 pnrs.
+                }
+            },
+            '_source': [
+                'VrproduktionsEnhed.livsforloeb.periode.gyldigFra',
+                'VrproduktionsEnhed.livsforloeb.periode.gyldigTil',
+                'VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchekode',
+                'VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchetekst'
+            ]
+        }
+        auth = (FilterXMLConfig.cvr_elastic_username(), FilterXMLConfig.cvr_elastic_password())
+        res = post('http://distribution.virk.dk/cvr-permanent/produktionsenhed/_search', json=data, auth=auth)
+
+        #results are in res.json()['hits']['hits'] (as an array)
+        # row info:
+        #  _source.VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchetekst
+        #  _source.VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchekode
+        #  _source.VrproduktionsEnhed.livsforloeb.periode.gyldigTil
+        #  _source.VrproduktionsEnhed.livsforloeb.periode.gyldigFra
+
+
+
+
+
         raise NotImplementedError(f'{self.__class__} not yet implemented')
 
+    #https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+    def chunks(lst, n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
 
 class CVRHandlerCVRAPI(CVRHandlerBase):
     """
@@ -193,8 +228,8 @@ def get_cvr_handler() -> CVRHandlerBase:
 
     if provider == 'cvrapi':
         return CVRHandlerCVRAPI()
-    elif provider == 'virk':
-        return CVRHandlerVirk()
+    elif provider == 'cvr_elastic':
+        return CVRHandlerElastic()
     elif provider == 'scrape':
         return CVRHandlerScrape()
     else:
