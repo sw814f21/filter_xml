@@ -16,6 +16,7 @@ class CVRHandlerBase:
     URL = ''
     SHOULD_SLEEP = False
     CRAWL_DELAY = 0
+    PRE_PROCESSING_STEP = False
 
     def __init__(self):
         # collect all class methods prefixed by 'append_'
@@ -23,6 +24,9 @@ class CVRHandlerBase:
                           for fun in dir(self.__class__)
                           if callable(getattr(self.__class__, fun))
                           and fun.startswith('append_')]
+
+    def pre_processing(self, data: list):
+        return
 
     def collect_data(self, data: Restaurant) -> Restaurant:
         """
@@ -37,46 +41,77 @@ class CVRHandlerElastic(CVRHandlerBase):
 
     https://data.virk.dk/datakatalog/erhvervsstyrelsen/system-til-system-adgang-til-cvr-data
     """
-    URL = ''
+    URL = 'http://distribution.virk.dk/cvr-permanent/produktionsenhed/_search'
+    PRE_PROCESSING_STEP = True
 
     def __init__(self):
         super().__init__()
+        self.lookup_data = {}
+
+    def pre_processing(self, data: list):
+        all_pnrs = [r.pnr for r in data if r.pnr is not None]
+        chunks = list(self.chunks(all_pnrs, 3000))
+        num_reqs = len(chunks)
+        print(f'Fetching pnr-info on {len(all_pnrs)} pnrs in {num_reqs} request(s):')
+
+        auth = (FilterXMLConfig.cvr_elastic_username(), FilterXMLConfig.cvr_elastic_password())
+
+        for i in range(len(chunks)):
+            data = {
+                'from': 0,
+                'size': 3000,
+                'query': {
+                    'terms': {
+                        'VrproduktionsEnhed.pNummer': chunks[i]
+                    }
+                },
+                '_source': [
+                    'VrproduktionsEnhed.livsforloeb.periode.gyldigFra',
+                    'VrproduktionsEnhed.livsforloeb.periode.gyldigTil',
+                    'VrproduktionsEnhed.pNummer',
+                    'VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchekode',
+                    'VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchetekst'
+                ]
+            }
+            res = post(self.URL, json=data, auth=auth)
+
+            if res.status_code == 200:
+                self.parse_response(res.json())
+            else:
+                print("Bad response code")
+
+            if i + 1 != num_reqs:
+                print('.', end="", flush=True)
+            else:
+                print('Done!', flush=True)
+
+    def parse_response(self, data: dict) -> dict:
+        for result in data['hits']['hits']:
+            curr_res = result['_source']['VrproduktionsEnhed']
+            industry = curr_res['produktionsEnhedMetadata']['nyesteHovedbranche']
+            period = curr_res['livsforloeb'][0]['periode']
+            start_date = period['gyldigFra']
+            end_date = period['gyldigTil']
+            value = {
+                'industrycode': industry['branchekode'],
+                'industrydesc': industry['branchetekst'],
+                'startdate': datetime.strptime(start_date, '%Y-%m-%d') if start_date else None,
+                'enddate': datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+            }
+            self.lookup_data[str(curr_res['pNummer'])] = value
 
     def collect_data(self, data: Restaurant) -> None:
+        if data.pnr in self.lookup_data:
+            data.industry_code = self.lookup_data[data.pnr]['industrycode']
+            data.industry_text = self.lookup_data[data.pnr]['industrydesc']
+            data.start_date = self.lookup_data[data.pnr]['startdate']
+        else:
+            print(f'Skipping restaurant with p-nr {data.pnr}: record not found remotely')
 
-        data = {
-            'from': 0,
-            'size': 3000,
-            'query': {
-                'terms': {
-                    'VrproduktionsEnhed.pNummer': data.pnr #TODO: Convert to an array of up to 3000 pnrs.
-                }
-            },
-            '_source': [
-                'VrproduktionsEnhed.livsforloeb.periode.gyldigFra',
-                'VrproduktionsEnhed.livsforloeb.periode.gyldigTil',
-                'VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchekode',
-                'VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchetekst'
-            ]
-        }
-        auth = (FilterXMLConfig.cvr_elastic_username(), FilterXMLConfig.cvr_elastic_password())
-        res = post('http://distribution.virk.dk/cvr-permanent/produktionsenhed/_search', json=data, auth=auth)
-
-        #results are in res.json()['hits']['hits'] (as an array)
-        # row info:
-        #  _source.VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchetekst
-        #  _source.VrproduktionsEnhed.produktionsEnhedMetadata.nyesteHovedbranche.branchekode
-        #  _source.VrproduktionsEnhed.livsforloeb.periode.gyldigTil
-        #  _source.VrproduktionsEnhed.livsforloeb.periode.gyldigFra
-
-
-
-
-
-        raise NotImplementedError(f'{self.__class__} not yet implemented')
+        return super().collect_data(data)
 
     #https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-    def chunks(lst, n):
+    def chunks(self, lst, n):
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
             yield lst[i:i + n]
@@ -91,6 +126,9 @@ class CVRHandlerCVRAPI(CVRHandlerBase):
 
     def __init__(self):
         super().__init__()
+
+    def pre_processing(self, data: list):
+        raise NotImplementedError(f'{self.__class__} not yet implemented')
 
     def collect_data(self, data: Restaurant) -> Restaurant:
         """
@@ -157,6 +195,9 @@ class CVRHandlerScrape(CVRHandlerBase):
 
     def __init__(self):
         super().__init__()
+
+    def pre_processing(self, data: list):
+        raise NotImplementedError(f'{self.__class__} not yet implemented')
 
     def collect_data(self, data: Restaurant) -> Restaurant:
         """

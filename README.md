@@ -26,7 +26,9 @@ First copy `config.sample.ini` to `config.ini`, then fill out the missing fields
         - `cvrapi`, request data from [cvrapi](https://cvrapi.dk/)
             - no limit, no delay
             - requires `[cvrapi]`
-        - `virk`, TBA - virk API
+        - `cvr_elastic`, request data from [Virk CVR API](https://data.virk.dk/datakatalog/erhvervsstyrelsen/system-til-system-adgang-til-cvr-data)
+            - no limit, no delay & able to fetch data in batches
+            - requires `[cvr_elastic]`
         - `scrape`, scrape from [Virk CVR data](https://datacvr.virk.dk/data/)
             - 10s delay
 - `[cvrapi]`
