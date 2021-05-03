@@ -21,7 +21,7 @@ class SmileyExtractor:
         """
         if self.should_get_xml:
             self._retrieve_smiley_data()
-
+        print("Parsing the smiley file.")
         tree = ET.parse(self.smiley_xml)
         root = tree.getroot()
 
@@ -43,6 +43,7 @@ class SmileyExtractor:
         """
         Download smiley XML data from Fødevarestyrelsen.
         """
+        print("Downloading a new smiley file.")
         res = get(self.SMILEY_XML_URL)
         with open(self.smiley_xml, 'w') as f:
             f.write(res.content.decode('utf-8'))
