@@ -22,7 +22,7 @@ Only industry codes `561010, 561020, 563000` are included (restaurants | pizzari
 First copy `config.sample.ini` to `config.ini`, then fill out the missing fields.
 
 - `[cvr]`
-    - `provider`, valid choices: `[ cvrapi | virk | scrape ]`
+    - `provider`, valid choices: `[ cvrapi | cvr_elastic | scrape ]`
         - `cvrapi`, request data from [cvrapi](https://cvrapi.dk/)
             - no limit, no delay
             - requires `[cvrapi]`
