@@ -48,6 +48,9 @@ class DataProcessor:
         total_rows = data.catalog_size
         row_index = 0
 
+        if self._cvr_handler.PRE_PROCESSING_STEP:
+            self._cvr_handler.pre_processing(data.catalog)
+
         for restaurant in data.catalog:
             # we use this to avoid using the same fallback in three separate if statements
             row_kept = False

@@ -41,6 +41,20 @@ class FilterXMLConfig:
         return cls.open_config().get('cvrapi', 'api_key')
 
     @classmethod
+    def cvr_elastic_username(cls) -> str:
+        """
+        Retrieves cvr_elastic username from config file
+        """
+        return cls.open_config().get('cvr_elastic', 'username')
+
+    @classmethod
+    def cvr_elastic_password(cls) -> str:
+        """
+        Retrieves cvr_elastic password from config file
+        """
+        return cls.open_config().get('cvr_elastic', 'password')
+
+    @classmethod
     def data_endpoint(cls) -> str:
         """
         Retrieves the data endpoint from config file
