@@ -24,8 +24,9 @@ class Blacklist:
         Add a resturant to the blacklist and write it to the file
         """
         seq_nr = restaurant.name_seq_nr
-        if not cls.contains(seq_nr):
-            cls._write_to_file(seq_nr)
+        if cls.contains(seq_nr):
+            return
+        cls._write_to_file(seq_nr)
 
     @classmethod
     def contains(cls, seq_nr: str):
