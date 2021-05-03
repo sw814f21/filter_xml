@@ -3,7 +3,7 @@ import json
 from filter_xml.data_outputter import get_outputter
 from filter_xml.smiley_extractor import SmileyExtractor
 from filter_xml.data_processor import DataProcessor
-from filter_xml.util import is_file_from_today
+from filter_xml.util import is_file_old
 
 
 class DataHandler:
@@ -17,7 +17,7 @@ class DataHandler:
         smiley_file = kwargs.pop('file', None)
 
         self.smiley_file = smiley_file if smiley_file else self.SMILEY_XML
-        self.should_get_xml = False if smiley_file else is_file_from_today(self.SMILEY_XML)
+        self.should_get_xml = False if smiley_file else is_file_old(self.SMILEY_XML)
 
         self.data_processor = DataProcessor(sample_size, skip_scrape, outputter)
 
@@ -25,7 +25,7 @@ class DataHandler:
         """
             Main runner for collection
         """
-        if is_file_from_today(self.SMILEY_JSON):
+        if not is_file_old(self.SMILEY_JSON):
             with open(self.SMILEY_JSON, 'r') as f:
                 data = json.loads(f.read())
         else:
