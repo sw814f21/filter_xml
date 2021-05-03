@@ -320,3 +320,26 @@ class FindSmileyHandler:
                 report.report_id = url.split('?')[1]
 
         return row
+
+
+class ZipcodeFinder:
+    """
+    Handler for fetching the name of city from zipcodes
+    """
+    URL = 'https://dawa.aws.dk/postnumre'
+
+    def collect_data(self, data: Restaurant) -> Restaurant:
+        """
+        """
+        if data.city is not None:
+            return data
+        print(f'Fetching city info on zipcode {data.zip_code}')
+        params = {
+            'nr': data.zip_code
+        }
+        res = get(self.URL, params=params)
+        if res.status_code == 200:
+            data.city = res.json()[0]['navn']
+        else:
+            print(f'Bad response when fetching zipcode: {data.zip_code}')
+        return data
