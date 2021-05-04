@@ -6,6 +6,7 @@ from datetime import datetime
 
 from filter_xml.config import FilterXMLConfig
 from filter_xml.catalog import Restaurant
+from filter_xml.filters import FilterLog
 
 
 class CVRHandlerBase:
@@ -328,11 +329,17 @@ class ZipcodeFinder:
     """
     URL = 'https://dawa.aws.dk/postnumre'
 
+    def __init__(self):
+        self.log = FilterLog()
+        self.log['null_city'] = 0
+
     def collect_data(self, data: Restaurant) -> Restaurant:
         """
         """
         if data.city is not None:
             return data
+
+        self.log['null_city'] += 1
         print(f'Fetching city info on zipcode {data.zip_code}')
         params = {
             'nr': data.zip_code
