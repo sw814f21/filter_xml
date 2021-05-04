@@ -1,6 +1,7 @@
 import json
 import os
 
+from datetime import datetime
 from typing import List, Callable, Dict
 from filter_xml.blacklist import Blacklist
 from filter_xml.catalog import Restaurant
@@ -41,7 +42,7 @@ class FilterLog:
 
         with open(self.LOG_FILE, 'r') as f:
             data = json.loads(f.read())
-            return data[key]
+            return data['log'][key]
 
     def __setitem__(self, key: str, value: int):
         """
@@ -52,7 +53,7 @@ class FilterLog:
         with open(self.LOG_FILE, 'r') as f:
             data = json.loads(f.read())
 
-        data[key] = value
+        data['log'][key] = value
 
         with open(self.LOG_FILE, 'w') as f:
             f.write(json.dumps(data, indent=4))
@@ -69,14 +70,14 @@ class FilterLog:
         """
         with open(self.LOG_FILE, 'r') as f:
             data = json.loads(f.read())
-            return key in data.keys()
+            return key in data['log'].keys()
 
     def _create_file(self):
         """
         Create the file and write an empty json structure
         """
         with open(self.LOG_FILE, 'w') as f:
-            f.write(json.dumps({}))
+            f.write(json.dumps({'time': datetime.now(), 'log': {}}))
 
 
 class Filters:
