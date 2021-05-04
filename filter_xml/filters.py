@@ -86,7 +86,7 @@ class Filters:
     LOG = {}  # type: Dict[str, int]
     LOGGER = FilterLog()
 
-    def filters(self) -> List[Callable]:
+    def _filters(self) -> List[Callable]:
         return [getattr(self.__class__, fun)
                 for fun in dir(self.__class__)
                 if callable(getattr(self.__class__, fun))
@@ -101,6 +101,12 @@ class Filters:
     def log_filters(cls):
         for key, value in cls.LOG.items():
             cls.LOGGER[key] = value
+
+    def filter(self, restaurant: Restaurant):
+        for f in self._filters():
+            if not f(restaurant):
+                return False
+        return True
 
 
 class PreFilters(Filters):

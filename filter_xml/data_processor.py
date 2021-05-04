@@ -21,8 +21,6 @@ class DataProcessor:
         self._sample_size = sample_size
         self._skip_scrape = skip_scrape
         self._outputter = outputter
-
-        # collect all class methods prefixed by 'filter_'
         self.post_filters = PostFilters()
 
     def process_smiley_json(self, data: RestaurantCatalog) -> None:
@@ -76,7 +74,7 @@ class DataProcessor:
 
                     # check filters to see if we should keep the row
                     # otherwise add it to blacklist so we don't scrape it next time
-                    if all([filter_(restaurant) for filter_ in self.post_filters.filters()]):
+                    if self.post_filters.filter(restaurant):
                         if not self._skip_scrape:
                             restaurant = self._smiley_handler.collect_data(restaurant)
                             restaurant = self._zipcode_finder.collect_data(restaurant)
