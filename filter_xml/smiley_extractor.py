@@ -36,7 +36,7 @@ class SmileyExtractor:
 
             catalog.add(new_obj)
 
-        self.pre_filters.log_pre_filters()
+        self.pre_filters.log_filters()
         return catalog
 
     def _retrieve_smiley_data(self) -> None:

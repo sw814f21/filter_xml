@@ -97,6 +97,11 @@ class Filters:
         for filter_name, count in self.LOG.items():
             print(f'{filter_name}: {count}')
 
+    @classmethod
+    def log_filters(cls):
+        for key, value in cls.LOG.items():
+            cls.LOGGER[key] = value
+
 
 class PreFilters(Filters):
     """
@@ -114,16 +119,6 @@ class PreFilters(Filters):
         'null_coordinates': 0,
         'blacklisted': 0
     }
-
-    def __init__(self):
-        self.LOGGER['null_control'] = 0
-        self.LOGGER['null_coordinates'] = 0
-        self.LOGGER['blacklisted'] = 0
-
-    @classmethod
-    def log_pre_filters(cls):
-        for key, value in cls.LOG.items():
-            cls.LOGGER[key] = value
 
     @ classmethod
     def filter_null_control(cls, data: Restaurant) -> bool:
@@ -165,8 +160,9 @@ class PostFilters(Filters):
     cls.LOGGER[key] here.
     """
 
-    def __init__(self):
-        self.LOGGER['industry_code'] = 0
+    LOG = {
+        'industry_code': 0
+    }
 
     @classmethod
     def filter_industry_codes(cls, data: Restaurant) -> bool:
@@ -175,7 +171,6 @@ class PostFilters(Filters):
         """
         include_codes = ['561010', '561020', '563000']
         res = data.industry_code in include_codes
-        print(f'valid industry code: {res}')
         if not res:
-            cls.LOGGER['industry_code'] += 1
+            cls.LOG['industry_code'] += 1
         return res

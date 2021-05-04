@@ -100,6 +100,8 @@ class DataProcessor:
 
             row_index += 1
 
+        self.post_filters.log_filters()
+
         token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
         res.setup_diff(self._outputter.get())
 
