@@ -86,7 +86,7 @@ class CVRHandlerElastic(CVRHandlerBase):
             else:
                 print('Done!', flush=True)
 
-    def parse_response(self, data: dict) -> dict:
+    def parse_response(self, data: dict) -> None:
         for result in data['hits']['hits']:
             curr_res = result['_source']['VrproduktionsEnhed']
             industry = curr_res['produktionsEnhedMetadata']['nyesteHovedbranche']
@@ -101,11 +101,12 @@ class CVRHandlerElastic(CVRHandlerBase):
             }
             self.lookup_data[str(curr_res['pNummer'])] = value
 
-    def collect_data(self, data: Restaurant) -> None:
+    def collect_data(self, data: Restaurant) -> Restaurant:
         if data.pnr in self.lookup_data:
             data.industry_code = self.lookup_data[data.pnr]['industrycode']
             data.industry_text = self.lookup_data[data.pnr]['industrydesc']
             data.start_date = self.lookup_data[data.pnr]['startdate']
+            data.end_date = self.lookup_data[data.pnr]['enddate']
         else:
             print(f'Skipping restaurant with p-nr {data.pnr}: record not found remotely')
 
@@ -332,6 +333,7 @@ class ZipcodeFinder:
     def __init__(self):
         self.log = FilterLog()
         self.log['null_city'] = 0
+        self.log['invalid_zip'] = 0
 
     def collect_data(self, data: Restaurant) -> Restaurant:
         """
@@ -346,7 +348,12 @@ class ZipcodeFinder:
         }
         res = get(self.URL, params=params)
         if res.status_code == 200:
-            data.city = res.json()[0]['navn']
+            r = res.json()
+            if len(r) > 0:
+                data.city = res.json()[0]['navn']
+            else:
+                print(f'Unable to retrieve city from zip code {data.zip_code}')
+                self.log['invalid_zip'] += 1
         else:
             print(f'Bad response when fetching zipcode: {data.zip_code}')
         return data
