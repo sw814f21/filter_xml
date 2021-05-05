@@ -76,7 +76,6 @@ class TempFile:
         """
         Finish the current session by closing and deleting the file
         """
-        self.__file.close()
         os.remove(self.FILE_NAME)
 
     def contains(self, seq_nr: str) -> bool:
