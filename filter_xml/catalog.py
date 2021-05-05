@@ -111,7 +111,7 @@ class Restaurant:
         self.region = row['region']
         self.industry_code = row['industry_code']
         self.industry_text = row['industry_text']
-        self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt())
+        self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt()) if row['start_date'] else None
         self.smiley_reports = [SmileyReport.from_json(report)
                                for report in row['smiley_reports']]
         self.city = row['city']
@@ -135,7 +135,7 @@ class Restaurant:
         """
         ISO-8601 formatted start date string property
         """
-        return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else ''
+        return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else None
 
     def is_valid_production_unit(self) -> bool:
         """

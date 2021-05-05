@@ -12,8 +12,8 @@ class TempFileTest(unittest.TestCase):
         self.temp_file = None
 
     def tearDown(self) -> None:
-        if self.temp_file and os.path.exists(TempFile.FILE_NAME):
-            self.temp_file.close()
+        if os.path.exists(TempFile.FILE_NAME):
+            os.remove(TempFile.FILE_NAME)
 
     def test_can_add_valid_date(self):
         self.temp_file = TempFile()
@@ -46,6 +46,10 @@ class TempFileTest(unittest.TestCase):
 
     def test_close_removes_file(self):
         self.temp_file = TempFile()
+        row1 = Restaurant()
+        row1.name_seq_nr = '123'
+        row1.start_date = datetime.now()
+        self.temp_file.add_data(row1)
 
         self.assertTrue(os.path.exists(TempFile.FILE_NAME))
         self.temp_file.close()
@@ -58,3 +62,15 @@ class TempFileTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.temp_file.add_data(row)
+
+    def test_empty_field_returns_correct(self):
+        row = Restaurant()
+        row.name_seq_nr = '123'
+        row.start_date = None
+        self.temp_file = TempFile()
+        self.temp_file.add_data(row)
+        self.temp_file = TempFile() # construct new temp file to load the data
+
+        data = self.temp_file.get_all()
+        
+        self.assertEqual(data.catalog[0].start_date, None)
