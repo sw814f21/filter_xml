@@ -1,5 +1,4 @@
 import os
-import csv
 import json
 
 from filter_xml.catalog import Restaurant, RestaurantCatalog
@@ -23,18 +22,6 @@ class TempFile:
 
         if file_exists:
             self.__data = self.__read_temp_data()
-
-
-    def __get_file_writer(self, field_names: list) -> csv.DictWriter:
-        """
-        Construct file writer
-        """
-        if 'name_seq_nr' not in field_names:
-            self.close()
-            raise ValueError(
-                'Expected "name_seq_nr" field to be provided in data example')
-
-        return csv.writer(self.__file, delimiter=";")
 
     def __read_temp_data(self) -> dict:
         """
