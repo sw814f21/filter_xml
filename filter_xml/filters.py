@@ -6,6 +6,7 @@ from typing import List, Callable, Dict
 from filter_xml.blacklist import Blacklist
 from filter_xml.catalog import Restaurant
 from filter_xml.config import FilterXMLConfig
+from filter_xml.cvr import ZipcodeFinder
 
 
 class FilterLog:
@@ -128,8 +129,12 @@ class PreFilters(Filters):
     LOG = {
         'null_control': 0,
         'null_coordinates': 0,
-        'blacklisted': 0
+        'blacklisted': 0,
+        'null_city': 0,
+        'invalid_zip': 0
     }
+
+    ZIP_CODES = ZipcodeFinder()
 
     @ classmethod
     def filter_null_control(cls, data: Restaurant) -> bool:
@@ -157,6 +162,17 @@ class PreFilters(Filters):
         if not res:
             cls.LOG['blacklisted'] += 1
         return res
+
+    @classmethod
+    def filter_city(cls, data: Restaurant) -> bool:
+        if not data.city:
+            cls.LOG['null_city'] += 1
+            data.city = cls.ZIP_CODES[data.zip_code]
+
+            if not data.city:
+                cls.LOG['invalid_zip'] += 1
+                return False
+        return True
 
 
 class PostFilters(Filters):

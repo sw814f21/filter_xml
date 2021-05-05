@@ -4,7 +4,7 @@ from filter_xml.config import FilterXMLConfig
 from filter_xml.data_outputter import _BaseDataOutputter
 from filter_xml.temp_file import TempFile
 from filter_xml.blacklist import Blacklist
-from filter_xml.cvr import get_cvr_handler, FindSmileyHandler, ZipcodeFinder
+from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
 from filter_xml.filters import PostFilters
 from filter_xml.catalog import RestaurantCatalog
 
@@ -17,7 +17,6 @@ class DataProcessor:
     def __init__(self, sample_size: int, skip_scrape: bool, outputter: _BaseDataOutputter) -> None:
         self._cvr_handler = get_cvr_handler()
         self._smiley_handler = FindSmileyHandler()
-        self._zipcode_finder = ZipcodeFinder()
         self._sample_size = sample_size
         self._skip_scrape = skip_scrape
         self._outputter = outputter
@@ -77,11 +76,6 @@ class DataProcessor:
                     if self.post_filters.filter(restaurant):
                         if not self._skip_scrape:
                             restaurant = self._smiley_handler.collect_data(restaurant)
-                            restaurant = self._zipcode_finder.collect_data(restaurant)
-
-                        # unable to fetch city from zip
-                        if restaurant.city is None:
-                            continue
 
                         res.add(restaurant)
                         row_kept = True

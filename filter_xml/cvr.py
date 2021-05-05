@@ -6,7 +6,6 @@ from datetime import datetime
 
 from filter_xml.config import FilterXMLConfig
 from filter_xml.catalog import Restaurant
-from filter_xml.filters import FilterLog
 
 
 class CVRHandlerBase:
@@ -328,32 +327,12 @@ class ZipcodeFinder:
     """
     Handler for fetching the name of city from zipcodes
     """
-    URL = 'https://dawa.aws.dk/postnumre'
+    URL = 'https://api.dataforsyningen.dk/postnumre'
 
     def __init__(self):
-        self.log = FilterLog()
-        self.log['null_city'] = 0
-        self.log['invalid_zip'] = 0
+        self.zip_map = {row['nr']: row['navn'] for row in get(self.URL).json()}
 
-    def collect_data(self, data: Restaurant) -> Restaurant:
-        """
-        """
-        if data.city is not None:
-            return data
-
-        self.log['null_city'] += 1
-        print(f'Fetching city info on zipcode {data.zip_code}')
-        params = {
-            'nr': data.zip_code
-        }
-        res = get(self.URL, params=params)
-        if res.status_code == 200:
-            r = res.json()
-            if len(r) > 0:
-                data.city = res.json()[0]['navn']
-            else:
-                print(f'Unable to retrieve city from zip code {data.zip_code}')
-                self.log['invalid_zip'] += 1
-        else:
-            print(f'Bad response when fetching zipcode: {data.zip_code}')
-        return data
+    def __getitem__(self, key: str):
+        if key not in self.zip_map.keys():
+            return None
+        return self.zip_map[key]
