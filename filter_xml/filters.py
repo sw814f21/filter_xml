@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List, Callable, Dict
 from filter_xml.blacklist import Blacklist
 from filter_xml.catalog import Restaurant
+from filter_xml.config import FilterXMLConfig
 
 
 class FilterLog:
@@ -77,7 +78,10 @@ class FilterLog:
         Create the file and write an empty json structure
         """
         with open(self.LOG_FILE, 'w') as f:
-            f.write(json.dumps({'time': datetime.now(), 'log': {}}))
+            f.write(json.dumps({
+                'time': datetime.now().strftime(FilterXMLConfig.iso_fmt()),
+                'log': {}
+            }))
 
 
 class Filters:
@@ -168,8 +172,13 @@ class PostFilters(Filters):
     """
 
     LOG = {
-        'industry_code': 0
+        'industry_code': 0,
+        'end_date': 0
     }
+
+    def __init__(self):
+        self.LOGGER['industry_code'] = 0
+        self.LOGGER['end_date'] = 0
 
     @classmethod
     def filter_industry_codes(cls, data: Restaurant) -> bool:
@@ -179,5 +188,16 @@ class PostFilters(Filters):
         include_codes = ['561010', '561020', '563000']
         res = data.industry_code in include_codes
         if not res:
-            cls.LOG['industry_code'] += 1
+            cls.LOGGER['industry_code'] += 1
+        return res
+
+    @classmethod
+    def filter_end_date(cls, data: Restaurant) -> bool:
+        """
+        Checks if row 'data' has an end date
+        """
+        res = not data.end_date
+        if not res:
+            print(f'end date: {data.end_date}, pnr: {data.pnr}')
+            cls.LOGGER['end_date'] += 1
         return res
