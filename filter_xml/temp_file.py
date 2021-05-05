@@ -25,7 +25,7 @@ class TempFile:
 
     def __read_temp_data(self) -> dict:
         """
-        Read temp file as a dictionary, indexed by p-number
+        Read temp file as a dictionary, indexed by sequence number
         """
 
         out = dict()
@@ -61,19 +61,19 @@ class TempFile:
 
     def close(self) -> None:
         """
-        Finish the current session by closing and deleting the file
+        Finish the current session by deleting the temp file
         """
         os.remove(self.FILE_NAME)
 
     def contains(self, seq_nr: str) -> bool:
         """
-        Check if file contains a restaurant, searching by p-number
+        Check if file contains a restaurant, searching by sequence number
         """
         return bool(self.__data.get(seq_nr))
 
     def get_all(self) -> RestaurantCatalog:
         """
-        Retrieve all restaurants in file as a list
+        Retrieve all restaurants in file as a RestaurantCatalog
         """
         catalog = RestaurantCatalog()
         catalog.add_many(list(self.__data.values()))
