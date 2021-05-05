@@ -79,6 +79,10 @@ class DataProcessor:
                             restaurant = self._smiley_handler.collect_data(restaurant)
                             restaurant = self._zipcode_finder.collect_data(restaurant)
 
+                        # unable to fetch city from zip
+                        if restaurant.city is None:
+                            continue
+
                         res.add(restaurant)
                         row_kept = True
                         temp_file.add_data(restaurant)
