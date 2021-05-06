@@ -318,7 +318,8 @@ class FindSmileyHandler:
         for tag, report in zip(tags, row.smiley_reports):
             if report:
                 url = tag.attrs['href']
-                report.report_id = url.split('?')[1]
+                # use default if we cant find urls - will yield error page
+                report.report_id = url.split('?')[1] if url else 'Virk'
 
         return row
 
