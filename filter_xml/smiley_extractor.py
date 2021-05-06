@@ -31,12 +31,12 @@ class SmileyExtractor:
             new_obj = Restaurant.from_xml({col.tag: col.text for col in row})
 
             # run all pre filters and skip if all does not pass
-            if not all([filter_(new_obj) for filter_ in self.pre_filters.filters()]):
+            if not self.pre_filters.filter(new_obj):
                 continue
 
             catalog.add(new_obj)
 
-        self.pre_filters.log_pre_filters()
+        self.pre_filters.log_filters()
         return catalog
 
     def _retrieve_smiley_data(self) -> None:

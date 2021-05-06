@@ -4,7 +4,7 @@ from filter_xml.config import FilterXMLConfig
 from filter_xml.data_outputter import _BaseDataOutputter
 from filter_xml.temp_file import TempFile
 from filter_xml.blacklist import Blacklist
-from filter_xml.cvr import get_cvr_handler, FindSmileyHandler, ZipcodeFinder
+from filter_xml.cvr import get_cvr_handler, FindSmileyHandler
 from filter_xml.filters import PostFilters
 from filter_xml.catalog import RestaurantCatalog
 
@@ -17,12 +17,9 @@ class DataProcessor:
     def __init__(self, sample_size: int, skip_scrape: bool, outputter: _BaseDataOutputter) -> None:
         self._cvr_handler = get_cvr_handler()
         self._smiley_handler = FindSmileyHandler()
-        self._zipcode_finder = ZipcodeFinder()
         self._sample_size = sample_size
         self._skip_scrape = skip_scrape
         self._outputter = outputter
-
-        # collect all class methods prefixed by 'filter_'
         self.post_filters = PostFilters()
 
     def process_smiley_json(self, data: RestaurantCatalog) -> None:
@@ -76,10 +73,9 @@ class DataProcessor:
 
                     # check filters to see if we should keep the row
                     # otherwise add it to blacklist so we don't scrape it next time
-                    if all([filter_(restaurant) for filter_ in self.post_filters.filters()]):
+                    if self.post_filters.filter(restaurant):
                         if not self._skip_scrape:
                             restaurant = self._smiley_handler.collect_data(restaurant)
-                            restaurant = self._zipcode_finder.collect_data(restaurant)
 
                         res.add(restaurant)
                         row_kept = True
@@ -99,6 +95,8 @@ class DataProcessor:
                 print(f'{total_rows - res.catalog_size} rows to go')
 
             row_index += 1
+
+        self.post_filters.log_filters()
 
         token = datetime.now().strftime(FilterXMLConfig.iso_fmt())
         res.setup_diff(self._outputter.get())

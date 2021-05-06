@@ -85,7 +85,7 @@ class CVRHandlerElastic(CVRHandlerBase):
             else:
                 print('Done!', flush=True)
 
-    def parse_response(self, data: dict) -> dict:
+    def parse_response(self, data: dict) -> None:
         for result in data['hits']['hits']:
             curr_res = result['_source']['VrproduktionsEnhed']
             industry = curr_res['produktionsEnhedMetadata']['nyesteHovedbranche']
@@ -100,11 +100,12 @@ class CVRHandlerElastic(CVRHandlerBase):
             }
             self.lookup_data[str(curr_res['pNummer'])] = value
 
-    def collect_data(self, data: Restaurant) -> None:
+    def collect_data(self, data: Restaurant) -> Restaurant:
         if data.pnr in self.lookup_data:
             data.industry_code = self.lookup_data[data.pnr]['industrycode']
             data.industry_text = self.lookup_data[data.pnr]['industrydesc']
             data.start_date = self.lookup_data[data.pnr]['startdate']
+            data.end_date = self.lookup_data[data.pnr]['enddate']
         else:
             print(f'Skipping restaurant with p-nr {data.pnr}: record not found remotely')
 
@@ -317,7 +318,8 @@ class FindSmileyHandler:
         for tag, report in zip(tags, row.smiley_reports):
             if report:
                 url = tag.attrs['href']
-                report.report_id = url.split('?')[1]
+                # use default if we cant find urls - will yield error page
+                report.report_id = url.split('?')[1] if url else 'Virk'
 
         return row
 
@@ -326,20 +328,12 @@ class ZipcodeFinder:
     """
     Handler for fetching the name of city from zipcodes
     """
-    URL = 'https://dawa.aws.dk/postnumre'
+    URL = 'https://api.dataforsyningen.dk/postnumre'
 
-    def collect_data(self, data: Restaurant) -> Restaurant:
-        """
-        """
-        if data.city is not None:
-            return data
-        print(f'Fetching city info on zipcode {data.zip_code}')
-        params = {
-            'nr': data.zip_code
-        }
-        res = get(self.URL, params=params)
-        if res.status_code == 200:
-            data.city = res.json()[0]['navn']
-        else:
-            print(f'Bad response when fetching zipcode: {data.zip_code}')
-        return data
+    def __init__(self):
+        self.zip_map = {row['nr']: row['navn'] for row in get(self.URL).json()}
+
+    def __getitem__(self, key: str):
+        if key not in self.zip_map.keys():
+            return None
+        return self.zip_map[key]
