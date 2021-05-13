@@ -33,6 +33,6 @@ class DataHandler:
             data = smiley_extractor.create_smiley_json()
 
             with open(self.SMILEY_JSON, 'w') as f:
-                f.write(json.dumps(data, indent=4))
+                f.write(json.dumps(data.as_dict(), indent=4))
 
         self.data_processor.process_smiley_json(data)

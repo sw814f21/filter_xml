@@ -308,3 +308,6 @@ class RestaurantCatalog:
             old_set \ new_set
         """
         return list(self.old_ids.difference(self.new_ids))
+
+    def as_dict(self) -> list:
+        return [res.as_dict() for res in self.catalog]
