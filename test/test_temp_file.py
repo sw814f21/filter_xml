@@ -73,4 +73,4 @@ class TempFileTest(unittest.TestCase):
 
         data = self.temp_file.get_all()
         
-        self.assertEqual(data.catalog[0].start_date, None)
+        self.assertEqual(data.catalog[0].start_date, '')

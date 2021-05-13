@@ -1,9 +1,12 @@
 import json
 import os
 
+from datetime import datetime
 from typing import List, Callable, Dict
 from filter_xml.blacklist import Blacklist
 from filter_xml.catalog import Restaurant
+from filter_xml.config import FilterXMLConfig
+from filter_xml.cvr import ZipcodeFinder
 
 
 class FilterLog:
@@ -41,7 +44,7 @@ class FilterLog:
 
         with open(self.LOG_FILE, 'r') as f:
             data = json.loads(f.read())
-            return data[key]
+            return data['log'][key]
 
     def __setitem__(self, key: str, value: int):
         """
@@ -52,7 +55,7 @@ class FilterLog:
         with open(self.LOG_FILE, 'r') as f:
             data = json.loads(f.read())
 
-        data[key] = value
+        data['log'][key] = value
 
         with open(self.LOG_FILE, 'w') as f:
             f.write(json.dumps(data, indent=4))
@@ -69,14 +72,17 @@ class FilterLog:
         """
         with open(self.LOG_FILE, 'r') as f:
             data = json.loads(f.read())
-            return key in data.keys()
+            return key in data['log'].keys()
 
     def _create_file(self):
         """
         Create the file and write an empty json structure
         """
         with open(self.LOG_FILE, 'w') as f:
-            f.write(json.dumps({}))
+            f.write(json.dumps({
+                'time': datetime.now().strftime(FilterXMLConfig.iso_fmt()),
+                'log': {}
+            }))
 
 
 class Filters:
@@ -86,7 +92,7 @@ class Filters:
     LOG = {}  # type: Dict[str, int]
     LOGGER = FilterLog()
 
-    def filters(self) -> List[Callable]:
+    def _filters(self) -> List[Callable]:
         return [getattr(self.__class__, fun)
                 for fun in dir(self.__class__)
                 if callable(getattr(self.__class__, fun))
@@ -96,6 +102,17 @@ class Filters:
         print('Filtered rows:')
         for filter_name, count in self.LOG.items():
             print(f'{filter_name}: {count}')
+
+    @classmethod
+    def log_filters(cls):
+        for key, value in cls.LOG.items():
+            cls.LOGGER[key] = value
+
+    def filter(self, restaurant: Restaurant):
+        for f in self._filters():
+            if not f(restaurant):
+                return False
+        return True
 
 
 class PreFilters(Filters):
@@ -112,18 +129,12 @@ class PreFilters(Filters):
     LOG = {
         'null_control': 0,
         'null_coordinates': 0,
-        'blacklisted': 0
+        'blacklisted': 0,
+        'null_city': 0,
+        'invalid_zip': 0
     }
 
-    def __init__(self):
-        self.LOGGER['null_control'] = 0
-        self.LOGGER['null_coordinates'] = 0
-        self.LOGGER['blacklisted'] = 0
-
-    @classmethod
-    def log_pre_filters(cls):
-        for key, value in cls.LOG.items():
-            cls.LOGGER[key] = value
+    ZIP_CODES = ZipcodeFinder()
 
     @ classmethod
     def filter_null_control(cls, data: Restaurant) -> bool:
@@ -152,6 +163,17 @@ class PreFilters(Filters):
             cls.LOG['blacklisted'] += 1
         return res
 
+    @classmethod
+    def filter_city(cls, data: Restaurant) -> bool:
+        if not data.city:
+            cls.LOG['null_city'] += 1
+            data.city = cls.ZIP_CODES[data.zip_code]
+
+            if not data.city:
+                cls.LOG['invalid_zip'] += 1
+                return False
+        return True
+
 
 class PostFilters(Filters):
     """
@@ -165,8 +187,14 @@ class PostFilters(Filters):
     cls.LOGGER[key] here.
     """
 
+    LOG = {
+        'industry_code': 0,
+        'end_date': 0
+    }
+
     def __init__(self):
         self.LOGGER['industry_code'] = 0
+        self.LOGGER['end_date'] = 0
 
     @classmethod
     def filter_industry_codes(cls, data: Restaurant) -> bool:
@@ -175,7 +203,17 @@ class PostFilters(Filters):
         """
         include_codes = ['561010', '561020', '563000']
         res = data.industry_code in include_codes
-        print(f'valid industry code: {res}')
         if not res:
             cls.LOGGER['industry_code'] += 1
+        return res
+
+    @classmethod
+    def filter_end_date(cls, data: Restaurant) -> bool:
+        """
+        Checks if row 'data' has an end date
+        """
+        res = not data.end_date
+        if not res:
+            print(f'end date: {data.end_date}, pnr: {data.pnr}')
+            cls.LOGGER['end_date'] += 1
         return res

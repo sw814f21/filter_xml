@@ -2,7 +2,6 @@
 # so we need to import future annotations to allow this
 # note that __future__ imports must be the first line of the file
 from __future__ import annotations
-import json
 
 from typing import Optional, List, Set, Dict
 from datetime import datetime
@@ -31,6 +30,7 @@ class Restaurant:
         self.industry_code = None  # type: Optional[str]
         self.industry_text = None  # type: Optional[str]
         self.start_date = None  # type: Optional[datetime]
+        self.end_date = None  # type: Optional[datetime]
         self.smiley_reports = []  # type: List[SmileyReport]
         self.city = None  # type: Optional[str]
         self.elite_smiley = None  # type: Optional[str]
@@ -78,6 +78,7 @@ class Restaurant:
         self.industry_code = row['brancheKode']
         self.industry_text = row['branche']
         self.start_date = None
+        self.end_date = None
         self.smiley_reports = [SmileyReport.from_xml(row[x[0]], row[x[1]])
                                for x in cls.REPORT_KEYS if row[x[0]]]
         self.city = row['By']
@@ -111,7 +112,10 @@ class Restaurant:
         self.region = row['region']
         self.industry_code = row['industry_code']
         self.industry_text = row['industry_text']
-        self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt()) if row['start_date'] else None
+        self.start_date = datetime.strptime(row['start_date'], FilterXMLConfig.iso_fmt()) \
+            if row['start_date'] else ''
+        self.end_date = datetime.strptime(row['end_date'], FilterXMLConfig.iso_fmt()) \
+            if row['end_date'] else ''
         self.smiley_reports = [SmileyReport.from_json(report)
                                for report in row['smiley_reports']]
         self.city = row['city']
@@ -137,12 +141,19 @@ class Restaurant:
         """
         return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else None
 
+    @property
+    def end_date_string(self) -> str:
+        """
+        ISO-8601 formatted start date string property
+        """
+        return self.end_date.strftime(FilterXMLConfig.iso_fmt()) if self.end_date else ''
+
     def is_valid_production_unit(self) -> bool:
         """
         Determines whether or not this Restaurant is a valid production unit by ensuring that
         both CVR- and P-numbers exist
         """
-        return self.cvrnr is not None and self.pnr is not None
+        return bool(self.cvrnr) and bool(self.pnr)
 
     def as_dict(self) -> dict:
         """
@@ -151,6 +162,7 @@ class Restaurant:
         d = self.__dict__.copy()
         d['smiley_reports'] = [report.as_dict() for report in self.smiley_reports]
         d['start_date'] = self.start_date_string
+        d['end_date'] = self.end_date_string
         return d
 
     def has_update(self, old: Restaurant) -> bool:
