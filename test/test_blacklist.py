@@ -35,20 +35,6 @@ class BlacklistTest(unittest.TestCase):
        
         self.assertTrue(Blacklist.contains('1234'))
 
-    def test_adding_entries_across_multiple_sessions_persists_both(self):
-        restaurant1 = Restaurant()
-        restaurant1.name_seq_nr = '1234'
-        restaurant2 = Restaurant()
-        restaurant2.name_seq_nr = '4321'
-
-        Blacklist.add(restaurant1)
-        self.reset_blacklist_state()
-        Blacklist.add(restaurant2)
-
-        self.assertTrue(Blacklist.contains('1234'))
-        self.assertTrue(Blacklist.contains('4321'))
-
-
     @classmethod
     def reset_blacklist_state(cls):
         Blacklist._restaurants = []
