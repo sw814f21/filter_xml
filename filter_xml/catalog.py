@@ -138,7 +138,7 @@ class Restaurant:
         """
         ISO-8601 formatted start date string property
         """
-        return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else ''
+        return self.start_date.strftime(FilterXMLConfig.iso_fmt()) if self.start_date else None
 
     @property
     def end_date_string(self) -> str:
