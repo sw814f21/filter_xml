@@ -4,6 +4,8 @@ from filter_xml.data_outputter import get_outputter
 from filter_xml.smiley_extractor import SmileyExtractor
 from filter_xml.data_processor import DataProcessor
 from filter_xml.util import is_file_old
+from filter_xml.catalog import RestaurantCatalog, Restaurant
+from filter_xml.filters import PreFilters
 
 
 class DataHandler:
@@ -26,8 +28,12 @@ class DataHandler:
             Main runner for collection
         """
         if not is_file_old(self.SMILEY_JSON):
+            data = RestaurantCatalog()
+            pre_filters = PreFilters()
             with open(self.SMILEY_JSON, 'r') as f:
-                data = json.loads(f.read())
+                temp = [Restaurant.from_json(row) for row in json.loads(f.read())]
+            temp = [r for r in temp if pre_filters.filter(r)]
+            data.add_many(temp)
         else:
             smiley_extractor = SmileyExtractor(self.smiley_file, self.should_get_xml)
             data = smiley_extractor.create_smiley_json()
